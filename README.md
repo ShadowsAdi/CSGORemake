@@ -1,2 +1,2 @@
 [EN] 
-Release v1.0-beta CSGO_REMAKE
+Release v1.0-beta CSGO_REMAKE: Private Release!
