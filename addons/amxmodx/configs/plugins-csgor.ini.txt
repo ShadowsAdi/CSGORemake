@@ -1,0 +1,2 @@
+csgor.amxx
+GHW_Weapon_Replacement.amxx
