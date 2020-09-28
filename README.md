@@ -17,7 +17,9 @@ Extract the archive and drag and drop files in your 'Cstrike' folder.
 All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This file will be created automatically after mod is installed and running.
 
 ## Commands
+
 	Administration Cmds
+	
 amx_givepoints <Name> <Amount> ( Give points to a certain target )
 amx_givecases <Name> <Amount> ( Give cases to a certain target )
 amx_givekeys <Name> <Amount> ( Give keys to a certain target )
@@ -30,6 +32,7 @@ amx_resetdata <Name> <Mode> ( Resets a player data. <Mode> 1 - Deleting the acco
 amx_change_pass <Name> <New Password> ( Reseting a player password )
 csgor_getinfo <Type> <Index> ( Gets infos about a Rank or a Skin given by RankID / SKinID )
 amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for other plugins )
+	
 	Public Cmds
 	
 say /reg ( Opens the registration menu )
