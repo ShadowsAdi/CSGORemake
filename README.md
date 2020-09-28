@@ -32,13 +32,14 @@ csgor_getinfo <Type> <Index> ( Gets infos about a Rank or a Skin given by RankID
 amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for other plugins )
 
 	## Public Cmds
-	say /reg ( Opens the registration menu )
-	say /menu ( Opens the main menu of the mod )
-	say /skin ( Prints a colored message in the target chat with infos about a skin from certain target viewmodel )
-	say /accept ( Accept a trade offer request )
-	say /deny ( Decline a trade offer request )
-	say /acceptcoin ( Accept a coinflip request )
-	say /denycoin ( Decline a coinflip request )
-	inspect ( Inspect a weapon from the player viewmodel ( not as spectator. This function is registered and as "impulse 100" )
+	
+say /reg ( Opens the registration menu )
+say /menu ( Opens the main menu of the mod )
+say /skin ( Prints a colored message in the target chat with infos about a skin from certain target viewmodel )
+say /accept ( Accept a trade offer request )
+say /deny ( Decline a trade offer request )
+say /acceptcoin ( Accept a coinflip request )
+say /denycoin ( Decline a coinflip request )
+inspect ( Inspect a weapon from the player viewmodel ( not as spectator. This function is registered and as "impulse 100" )
 	
 ## Docs
