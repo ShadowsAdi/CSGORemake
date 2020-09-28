@@ -18,6 +18,7 @@ All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This
 
 ## Commands
 	## Administration Cmds
+
 amx_givepoints <Name> <Amount> ( Give points to a certain target )
 amx_givecases <Name> <Amount> ( Give cases to a certain target )
 amx_givekeys <Name> <Amount> ( Give keys to a certain target )
@@ -32,6 +33,7 @@ csgor_getinfo <Type> <Index> ( Gets infos about a Rank or a Skin given by RankID
 amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for other plugins )
 	
 	## Public Cmds
+
 	say /reg ( Opens the registration menu )
 	say /menu ( Opens the main menu of the mod )
 	say /skin ( Prints a colored message in the target chat with infos about a skin from certain target viewmodel )
