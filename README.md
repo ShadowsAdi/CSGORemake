@@ -1,7 +1,7 @@
 # CSGO Remake
 
 Mod inspired by the popular Counter Strike: Global Offensive.
-Running only on AmxModX 1.9.0 / 1.10.0
+Running only on AmxModX 1.8.3 / 1.9.0 / 1.10.0
 
 ## Requirements
 This mod were tested on Linux Distribution:
