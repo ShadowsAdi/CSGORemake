@@ -30,7 +30,6 @@ amx_resetdata <Name> <Mode> ( Resets a player data. <Mode> 1 - Deleting the acco
 amx_change_pass <Name> <New Password> ( Reseting a player password )
 csgor_getinfo <Type> <Index> ( Gets infos about a Rank or a Skin given by RankID / SKinID )
 amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for other plugins )
-
 	Public Cmds
 	
 say /reg ( Opens the registration menu )
@@ -44,17 +43,19 @@ inspect ( Inspect a weapon from the player viewmodel ( not as spectator. This fu
 	
 ## Docs
 Mod has in total, 9 forwards and 14 natives.
-More about documentation can be found in csgo_remake.inc file .../amxmodx/scripting/include
+More about documentation can be found in [csgo_remake.inc](https://github.com/ShadowsAdi/csgoremake/blob/master/addons/amxmodx/scripting/include/csgo_remake.inc) file .../amxmodx/scripting/include.
 
 ## Known Issues
-No issue, feel free to open one [here](https://github.com/ShadowsAdi/csgoremake/issues)
+No issue, feel free to open one [here](https://github.com/ShadowsAdi/csgoremake/issues).
 
 ## Servers using this plugin
-See the list [here](https://www.gametracker.com/search/?search_by=server_variable&search_by2=csgor_version&query=&loc=_all&sort=&order=)
+See the list [here](https://www.gametracker.com/search/?search_by=server_variable&search_by2=csgor_version&query=&loc=_all&sort=&order=).
 
 ## Credits
-[CS:GO Ports](https://gamebanana.com/studios/34724) and @[TheDoctor0](https://github.com/TheDoctor0/) for pack of weapon textures, original models, submodels and more
+[CS:GO Ports](https://gamebanana.com/studios/34724) and @[TheDoctor0](https://github.com/TheDoctor0/) for pack of weapon textures, original models, submodels and more.
 
 [Hanna](https://forums.alliedmods.net/member.php?u=273346), [1xAero](https://forums.alliedmods.net/member.php?u=284061) for ability to change viewmodel bodygroup that is required for submodels; and to [HamletEagle](https://forums.alliedmods.net/showpost.php?p=2709653&postcount=2) for this post.
 
-And many thanks for those who gave me a deep understanding into pawn: [fysiks](https://forums.alliedmods.net/member.php?u=30719), [Bugsy](https://forums.alliedmods.net/member.php?u=4234), [CrazY.](https://forums.alliedmods.net/member.php?u=260442), [HamletEagle](https://forums.alliedmods.net/member.php?u=237107), [thEsp](https://forums.alliedmods.net/member.php?u=281156)
+[GHW_Chronic](https://forums.alliedmods.net/member.php?u=2314) for [Weapon Model + Sound Replacement](https://forums.alliedmods.net/showthread.php?t=43979) script.
+
+And many thanks for those who gave me a deep understanding into pawn: [fysiks](https://forums.alliedmods.net/member.php?u=30719), [Bugsy](https://forums.alliedmods.net/member.php?u=4234), [CrazY.](https://forums.alliedmods.net/member.php?u=260442), [HamletEagle](https://forums.alliedmods.net/member.php?u=237107), [thEsp](https://forums.alliedmods.net/member.php?u=281156).
