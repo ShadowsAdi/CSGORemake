@@ -18,7 +18,6 @@ All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This
 
 ## Commands
 	## Administration Cmds
-
 amx_givepoints <Name> <Amount> ( Give points to a certain target )
 amx_givecases <Name> <Amount> ( Give cases to a certain target )
 amx_givekeys <Name> <Amount> ( Give keys to a certain target )
@@ -42,4 +41,5 @@ amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for o
 	say /acceptcoin ( Accept a coinflip request )
 	say /denycoin ( Decline a coinflip request )
 	inspect ( Inspect a weapon from the player viewmodel ( not as spectator. This function is registered and as "impulse 100" )
+	
 ## Docs
