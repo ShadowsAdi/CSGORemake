@@ -17,7 +17,7 @@ Extract the archive and drag and drop files in your 'Cstrike' folder.
 All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This file will be created automatically after mod is installed and running.
 
 ## Commands
-	## Administration Cmds
+	Administration Cmds
 amx_givepoints <Name> <Amount> ( Give points to a certain target )
 amx_givecases <Name> <Amount> ( Give cases to a certain target )
 amx_givekeys <Name> <Amount> ( Give keys to a certain target )
@@ -31,7 +31,7 @@ amx_change_pass <Name> <New Password> ( Reseting a player password )
 csgor_getinfo <Type> <Index> ( Gets infos about a Rank or a Skin given by RankID / SKinID )
 amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for other plugins )
 
-	## Public Cmds
+	Public Cmds
 	
 say /reg ( Opens the registration menu )
 say /menu ( Opens the main menu of the mod )
@@ -43,3 +43,16 @@ say /denycoin ( Decline a coinflip request )
 inspect ( Inspect a weapon from the player viewmodel ( not as spectator. This function is registered and as "impulse 100" )
 	
 ## Docs
+Mod has in total, 9 forwards and 14 natives.
+More about documentation can be found in csgo_remake.inc file .../amxmodx/scripting/include
+
+## Known Issues
+No issue, feel free to open one [here](https://github.com/ShadowsAdi/csgoremake/issues)
+
+## Servers using this plugin
+See the list [here](https://www.gametracker.com/search/?search_by=server_variable&search_by2=csgor_version&query=&loc=_all&sort=&order=)
+
+## Credits
+[CS:GO Ports](https://gamebanana.com/studios/34724) and @[TheDoctor0](https://github.com/TheDoctor0/) for pack of weapon textures, original models, submodels and more
+[Hanna](https://forums.alliedmods.net/member.php?u=273346) and [1xAero](https://forums.alliedmods.net/member.php?u=284061) for ability to change viewmodel bodygroup that is required for submodels
+And many thanks for those who gave me a deep understanding into pawn: [fysiks](https://forums.alliedmods.net/member.php?u=30719), [Bugsy](https://forums.alliedmods.net/member.php?u=4234), [CrazY.](https://forums.alliedmods.net/member.php?u=260442), [HamletEagle](https://forums.alliedmods.net/member.php?u=237107), [thEsp](https://forums.alliedmods.net/member.php?u=281156)
