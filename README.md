@@ -19,6 +19,8 @@ All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This
 ## Features
 nVault data saving ( Data can't be lost ).
 
+Maxmimum skin amount is 441.
+
 RangUP only ( announces in chat those who rank up ).
 
 Automatically weapon reload + refill at spawn.
