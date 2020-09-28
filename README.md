@@ -54,5 +54,7 @@ See the list [here](https://www.gametracker.com/search/?search_by=server_variabl
 
 ## Credits
 [CS:GO Ports](https://gamebanana.com/studios/34724) and @[TheDoctor0](https://github.com/TheDoctor0/) for pack of weapon textures, original models, submodels and more
+
 [Hanna](https://forums.alliedmods.net/member.php?u=273346) and [1xAero](https://forums.alliedmods.net/member.php?u=284061) for ability to change viewmodel bodygroup that is required for submodels
+
 And many thanks for those who gave me a deep understanding into pawn: [fysiks](https://forums.alliedmods.net/member.php?u=30719), [Bugsy](https://forums.alliedmods.net/member.php?u=4234), [CrazY.](https://forums.alliedmods.net/member.php?u=260442), [HamletEagle](https://forums.alliedmods.net/member.php?u=237107), [thEsp](https://forums.alliedmods.net/member.php?u=281156)
