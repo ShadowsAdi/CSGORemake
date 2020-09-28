@@ -30,8 +30,8 @@ amx_resetdata <Name> <Mode> ( Resets a player data. <Mode> 1 - Deleting the acco
 amx_change_pass <Name> <New Password> ( Reseting a player password )
 csgor_getinfo <Type> <Index> ( Gets infos about a Rank or a Skin given by RankID / SKinID )
 amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for other plugins )
-	
-## Public Cmds
+
+	## Public Cmds
 	say /reg ( Opens the registration menu )
 	say /menu ( Opens the main menu of the mod )
 	say /skin ( Prints a colored message in the target chat with infos about a skin from certain target viewmodel )
