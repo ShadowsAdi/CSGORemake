@@ -119,7 +119,7 @@ See the list [here](https://www.gametracker.com/search/?search_by=server_variabl
 
 [Hanna](https://forums.alliedmods.net/member.php?u=273346), [1xAero](https://forums.alliedmods.net/member.php?u=284061) for ability to change viewmodel bodygroup that is required for submodels; and to [HamletEagle](https://forums.alliedmods.net/showpost.php?p=2709653&postcount=2) for this post.
 
-[OciXCrom](https://forums.alliedmods.net/member.php?u=239716) for his CromChat(https://forums.alliedmods.net/showthread.php?p=2503655) library
+[OciXCrom](https://forums.alliedmods.net/member.php?u=239716) for his [CromChat](https://forums.alliedmods.net/showthread.php?p=2503655) library
 
 [GHW_Chronic](https://forums.alliedmods.net/member.php?u=2314) for [Weapon Model + Sound Replacement](https://forums.alliedmods.net/showthread.php?t=43979) script.
 
