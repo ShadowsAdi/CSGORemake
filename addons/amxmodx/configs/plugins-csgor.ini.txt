@@ -1,2 +1,2 @@
-csgor.amxx
+csgo_remake.amxx
 GHW_Weapon_Replacement.amxx
