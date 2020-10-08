@@ -132,6 +132,24 @@ native csgor_set_user_skins(id, skinid, amount);
 native csgor_is_user_logged(id);
 
 /**
+ * Returns if is the half round.
+ * 
+ * @type		Boolean.
+ * @return 			True if it is, false otherwise.
+ *
+ */
+native csgor_is_half_round();
+
+/**
+ * Returns if is the last round.
+ * 
+ * @type		Boolean.
+ * @return 			True if it is, false otherwise.
+ *
+ */
+native csgor_is_last_round();
+
+/**
  * Called when a player log in account.
  *
  * @param id		Player index.
