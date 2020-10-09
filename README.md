@@ -102,7 +102,7 @@ say /denycoin ( Decline a coinflip request )
 inspect ( Inspect a weapon from the player viewmodel ( not as spectator. This function is registered and as "impulse 100" )
 	
 ## Docs
-Mod has in total, 9 forwards and 14 natives.
+Mod has in total, 9 forwards and 16 natives.
 
 More about documentation can be found in [csgo_remake.inc](https://github.com/ShadowsAdi/csgoremake/blob/master/addons/amxmodx/scripting/include/csgo_remake.inc) file .../amxmodx/scripting/include.
 
