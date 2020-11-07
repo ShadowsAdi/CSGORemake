@@ -178,7 +178,6 @@ forward csgor_user_register(id);
  */
 forward csgor_user_password_failed(id);
 
-
 /**
  * Called when a player make assist.
  *
@@ -213,7 +212,7 @@ forward csgor_user_case_open(id);
 forward csgor_user_craft(id);
 
 /**
- * Called when a player is crafting a weapon successfuly.
+ * Called when a player is leveling up.
  *
  * @param id			Player index.
  * @param keys			Amount of keys received by index.
