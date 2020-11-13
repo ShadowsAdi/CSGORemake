@@ -272,13 +272,7 @@ CSGOR_COINFLIP_FAIL2 = Coinflip-ul a esuat! Unul dintre voi nu mai are item-ul a
 CSGOR_COINFLIP_YOU_WON_X_WITH_X = {n}Ai castigat Coinflip-ul cu {g}%s{n}, skin-ul castigat: {g}%s{n}. Felicitari!
 CSGOR_COINFLIP_YOU_LOSE_X_WITH_X = {n}Ai pierdut Coinflip-ul cu {g}%s{n}, skin-ul pierdut: {g}^%s{n}. Mai mult noroc data viitoare!
 CSGOR_NO_ACTIVE_SKIN = Nu ai niciun skin in mana.
-CSGOR_MISSIONS_MENU = Meniu Misiuni
-CSGOR_MISSION_DIE = Die like a true beginner
-CSGOR_MISSION_NOSCOPE = Scopes are for the n00bs!
-CSGOR_MISSION_STRONG = I'm strooooong!!!
-CSGOR_MISSION_SNIPE = Snipe them all!
-CSGOR_MISSION_MELEE = Knife kills = glory kills
-CSGOR_MISSION_AGAIN = Time to play Sniper... AGAIN.
+
 
 [en]
 CSGOR_NO_DROP_SKINS = There are no drop type skins!
@@ -555,10 +549,3 @@ CSGOR_COINFLIP_FAIL2 = Coinflip failed! One of you doesn't have the bet item!
 CSGOR_COINFLIP_YOU_WON_X_WITH_X = {n}You've won the Coinflip aganist {g}%s{n}, skin won: {g}%s{n}. Congratz!
 CSGOR_COINFLIP_YOU_LOSE_X_WITH_X = {n}You've lost the Coinflip aganist {g}%s{n}, skin lost: {g}^%s{n}. More luck next time!
 CSGOR_NO_ACTIVE_SKIN = You have no skin in your hand.
-CSGOR_MISSIONS_MENU = Missions Menu
-CSGOR_MISSION_DIE = Die like a true beginner^nDie for 100 times.
-CSGOR_MISSION_NOSCOPE = Scopes are for the n00bs!
-CSGOR_MISSION_STRONG = I'm strooooong!!!
-CSGOR_MISSION_SNIPE = Snipe them all!
-CSGOR_MISSION_MELEE = Knife kills = glory kills
-CSGOR_MISSION_AGAIN = Time to play Sniper... AGAIN.
