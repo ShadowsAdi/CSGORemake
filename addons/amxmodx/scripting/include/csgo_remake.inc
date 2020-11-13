@@ -79,23 +79,23 @@ native csgor_get_user_cases(id);
 native csgor_set_user_cases(id, amount);
 
 /**
- * Returns a player's Rang ID. Set Rang name in output.
+ * Returns a player's Rank ID. Set Rang name in output.
  *
  * @param id		Player index.
  * @param output	Output array for rang name.
  * @param len		Max length of a output array.
- * @return			Player Rang ID. -1 on error.
+ * @return			Player Rank ID. -1 on error.
  */
-native csgor_get_user_rang(id, output[], len);
+native csgor_get_user_rank(id, output[], len);
 
 /**
- * Sets a player's Rang ID. Set the appropriate amount of kills.
+ * Sets a player's Rank ID. Set the appropriate amount of kills.
  *
  * @param id		Player index.
- * @param rangid	A valid Rang ID.
+ * @param rankid	A valid Rank ID.
  * @return			True on success, false otherwise.
  */
-native csgor_set_user_rang(id, rangid);
+native csgor_set_user_rank(id, rangid);
 
 /**
  * Returns a player's amount of skins by specified Skin ID.
@@ -124,6 +124,22 @@ native csgor_set_user_all_skins(id);
 native csgor_set_user_skins(id, skinid, amount);
 
 /**
+ * Sets a player's skins (by specific Skin ID) to desired amount.
+ *
+ * @return			Amount of total skins.
+ */
+native csgor_get_skins_num()
+
+/**
+ * Sets a player's Rank ID. Set the appropriate amount of kills.
+ *
+ * @param skinid	Skin index.
+ * @param rankid	A valid Rank ID.
+ * @return			True on success, false otherwise.
+ */
+native csgor_get_skin_name(skinid, output[], len)
+
+/**
  * Returns whether a player is logged.
  *
  * @param id		Player index.
@@ -134,7 +150,6 @@ native csgor_is_user_logged(id);
 /**
  * Returns if is the half round.
  * 
- * @type		Boolean.
  * @return 			True if it is, false otherwise.
  *
  */
@@ -143,11 +158,28 @@ native csgor_is_half_round();
 /**
  * Returns if is the last round.
  * 
- * @type		Boolean.
  * @return 			True if it is, false otherwise.
  *
  */
 native csgor_is_last_round();
+
+/**
+ * Returns if item is a skin, a case or a key.
+ * 
+ * @type			Bool
+ * @return 			True if it is, false otherwise.
+ *
+ */
+native csgor_is_good_item(item)
+
+/**
+ * Returns if item is a skin.
+ * 
+ * @type			Bool
+ * @return 			True if it is, false otherwise.
+ *
+ */
+native csgor_is_item_skin(item)
 
 /**
  * Called when a player log in account.
@@ -177,6 +209,7 @@ forward csgor_user_register(id);
  * @param id			Player index.
  */
 forward csgor_user_password_failed(id);
+
 
 /**
  * Called when a player make assist.
