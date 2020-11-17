@@ -10,7 +10,7 @@ This mod were tested on Linux Distribution:
 - AmxModX 1.10.0-5406
 
 ## Install
-Download latest release from [releases](https://github.com/ShadowsAdi/csgoremake/releases/latest).
+Download latest release from [here](https://github.com/ShadowsAdi/CSGORemake/archive/master.zip).
 Extract the archive and drag and drop files in your 'Cstrike' folder.
 
 ## Config
