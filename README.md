@@ -1,4 +1,4 @@
-# CSGO Remake
+# CSGO Remake V 1.6 
 
 Mod inspired by the popular Counter Strike: Global Offensive.
 Running only on AmxModX 1.8.3 / 1.9.0 / 1.10.0
