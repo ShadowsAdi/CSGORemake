@@ -207,8 +207,9 @@ forward csgor_user_register(id);
  * Called when a player is entering a wrong password.
  *
  * @param id			Player index.
+ * @param fails			How many times player entered the wrong password.
  */
-forward csgor_user_password_failed(id);
+forward csgor_user_password_failed(id, iFail);
 
 
 /**
