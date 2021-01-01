@@ -128,7 +128,7 @@ native csgor_set_user_skins(id, skinid, amount);
  *
  * @return			Amount of total skins.
  */
-native csgor_get_skins_num()
+native csgor_get_skins_num();
 
 /**
  * Sets a player's Rank ID. Set the appropriate amount of kills.
@@ -137,7 +137,7 @@ native csgor_get_skins_num()
  * @param rankid	A valid Rank ID.
  * @return			True on success, false otherwise.
  */
-native csgor_get_skin_name(skinid, output[], len)
+native csgor_get_skin_name(skinid, output[], len);
 
 /**
  * Returns whether a player is logged.
@@ -170,7 +170,7 @@ native csgor_is_last_round();
  * @return 			True if it is, false otherwise.
  *
  */
-native csgor_is_good_item(item)
+native csgor_is_good_item(item);
 
 /**
  * Returns if item is a skin.
@@ -179,7 +179,16 @@ native csgor_is_good_item(item)
  * @return 			True if it is, false otherwise.
  *
  */
-native csgor_is_item_skin(item)
+native csgor_is_item_skin(item);
+
+/**
+ * Returns if warmup is active.
+ * 
+ * @type			Bool
+ * @return 			True if it is, false otherwise.
+ *
+ */
+native csgor_is_warmup();
 
 /**
  * Called when a player log in account.
