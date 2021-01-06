@@ -191,6 +191,18 @@ native csgor_is_item_skin(item);
 native csgor_is_warmup();
 
 /**
+ * Returns skin name and skin index in array as string
+ * 
+ * @param skinName[]		Skin name to search for index in array.
+ * @param output[]		Buffer to copy string to.
+ * @param len			Buffer size.
+ *
+ * @noreturn
+ *
+ */
+native csgor_get_skin_index(skinName[], output[], len)
+
+/**
  * Called when a player log in account.
  *
  * @param id		Player index.
