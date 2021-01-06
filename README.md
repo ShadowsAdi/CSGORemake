@@ -20,7 +20,7 @@ Extract the archive and drag and drop files in your 'Cstrike' folder.
 All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This file will be created automatically after mod is installed and running.
 
 ## Features
-nVault data saving ( Data can't be lost ).
+nVault and MySQL data saving.
 
 Maxmimum skin amount is 441.
 
