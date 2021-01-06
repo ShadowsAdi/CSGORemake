@@ -86,6 +86,8 @@ csgor_getinfo <Type> <Index> ( Gets infos about a Rank or a Skin given by RankID
 	
 amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for other plugins )
 	
+amx_skin_index <Skin Name> ( Returning skin id in the array )
+	
 	Public Cmds
 	
 say /reg ( Opens the registration menu )
@@ -105,7 +107,7 @@ say /denycoin ( Decline a coinflip request )
 inspect ( Inspect a weapon from the player viewmodel ( not as spectator. This function is registered and as "impulse 100" )
 	
 ## Docs
-Mod has in total, 9 forwards and 16 natives.
+Mod has in total, 9 forwards and 23 natives.
 
 More about documentation can be found in [csgo_remake.inc](https://github.com/ShadowsAdi/csgoremake/blob/master/addons/amxmodx/scripting/include/csgo_remake.inc) file .../amxmodx/scripting/include.
 
