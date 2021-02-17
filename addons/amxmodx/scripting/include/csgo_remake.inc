@@ -191,6 +191,15 @@ native csgor_is_item_skin(item);
 native csgor_is_warmup();
 
 /**
+ * Returns ranks num from array.
+ *
+ * @noparam
+ *
+ * @return 			Ranks Num from Array.
+ */
+native csgor_ranks_num();
+
+/**
  * Returns skin name and skin index in array as string
  * 
  * @param skinName[]		Skin name to search for index in array.
@@ -270,8 +279,7 @@ forward csgor_user_craft(id);
  * Called when a player is leveling up.
  *
  * @param id			Player index.
- * @param keys			Amount of keys received by index.
- * @param cases			Amount of cases received by index.
- * @param points		Amount of points received by index.
+ * @param szRank		Buffer to copy rank name to.
+ * @param iRank			Rank index in Array.
  */
-forward csgor_user_levelup(id, keys, cases, points);
+forward csgor_user_levelup(id, const szRank[], iRank);
