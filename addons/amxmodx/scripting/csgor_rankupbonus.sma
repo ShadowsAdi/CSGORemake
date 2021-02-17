@@ -26,15 +26,12 @@ public csgor_user_levelup(id, const szRank[], iRank)
 {
 	if(is_user_connected(id) && csgor_is_user_logged(id))
 	{
-		for(new i; i < g_iRanksNum; i++)
-		{
-			// Depends on player's rank
-			// Example:
-			// Cvar csgor_bonus_rankup is "3", so player if is ranking up from first rank, he will get 3 * i = 1 keys + cases
-			// If player is ranking up from the second rank, he'll get 3 * i = 2 keys + cases
-			
-			csgor_set_user_keys(id, csgor_get_user_keys(id) + (get_pcvar_num(c_RankUp) * i))
-			csgor_set_user_cases(id, csgor_get_user_cases(id) + (get_pcvar_num(c_RankUp) * i))
-		}
+		// Depends on player's rank
+		// Example:
+		// Cvar csgor_bonus_rankup is "3", so player if is ranking up from first rank, he will get 3 * iRank = 1 key + 1 case
+		// If player is ranking up from the second rank, he'll get 3 * iRank = 2 keys + cases
+
+		csgor_set_user_keys(id, csgor_get_user_keys(id) + (get_pcvar_num(c_RankUp) * iRank))
+		csgor_set_user_cases(id, csgor_get_user_cases(id) + (get_pcvar_num(c_RankUp) * iRank))
 	}
 }
