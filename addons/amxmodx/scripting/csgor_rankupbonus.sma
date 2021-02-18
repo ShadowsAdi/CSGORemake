@@ -8,18 +8,12 @@
 #define AUTHOR  "Shadows Adi"
 
 new c_RankUp
-new g_iRanksNum
 
 public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR)
 
 	c_RankUp = register_cvar("csgor_bonus_rankup", "3")
-}
-
-public OnConfigsExecuted()
-{
-	g_iRanksNum = csgor_ranks_num()
 }
 
 public csgor_user_levelup(id, const szRank[], iRank)
