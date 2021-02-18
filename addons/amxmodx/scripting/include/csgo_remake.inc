@@ -203,13 +203,11 @@ native csgor_ranks_num();
  * Returns skin name and skin index in array as string
  * 
  * @param skinName[]		Skin name to search for index in array.
- * @param output[]		Buffer to copy string to.
- * @param len			Buffer size.
  *
- * @noreturn
+ * @return			Skin index in array.
  *
  */
-native csgor_get_skin_index(skinName[], output[], len)
+native csgor_get_skin_index(skinName[]);
 
 /**
  * Called when a player log in account.
