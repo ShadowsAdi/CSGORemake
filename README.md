@@ -1,4 +1,5 @@
 # CSGO Remake V 2.3
+<img align="center" src="https://i.imgur.com/Vqt08pg.png" alt="CS:GO Remake"/>
 
 Mod inspired by the popular Counter Strike: Global Offensive.
 Running only on AmxModX 1.8.3 / 1.9.0 / 1.10.0
@@ -131,5 +132,7 @@ See the list [here](https://www.gametracker.com/search/?search_by=server_variabl
 [OciXCrom](https://forums.alliedmods.net/member.php?u=239716) for his [CromChat](https://forums.alliedmods.net/showthread.php?p=2503655) library
 
 [GHW_Chronic](https://forums.alliedmods.net/member.php?u=2314) for [Weapon Model + Sound Replacement](https://forums.alliedmods.net/showthread.php?t=43979) script.
+
+[The Kalu](https://www.extreamcs.com/forum/the-kalu-u23351.html) for CS:GO Remake's banner.
 
 And many thanks for those who gave me a deep understanding into pawn: [fysiks](https://forums.alliedmods.net/member.php?u=30719), [Bugsy](https://forums.alliedmods.net/member.php?u=4234), [CrazY.](https://forums.alliedmods.net/member.php?u=260442), [HamletEagle](https://forums.alliedmods.net/member.php?u=237107), [thEsp](https://forums.alliedmods.net/member.php?u=281156).
