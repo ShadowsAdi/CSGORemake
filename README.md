@@ -24,6 +24,10 @@ nVault and MySQL data saving.
 
 Maxmimum skin amount is 441.
 
+StatTrack System on every Weapon Skin.
+
+Dynamic Main Menu.
+
 RangUP only ( announces in chat those who rank up ).
 
 Automatically weapon reload + refill at spawn.
