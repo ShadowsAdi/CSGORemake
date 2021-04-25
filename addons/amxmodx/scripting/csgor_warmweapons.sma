@@ -5,7 +5,7 @@
 #include <reapi>
 
 #define PLUGIN  "[CS:GO Remake] WarmUp Weapons"
-#define VERSION "1.0"
+#define VERSION "1.1"
 #define AUTHOR  "Shadows Adi"
 
 #define IsPlayer(%1) (1 <= %1 <= MAX_PLAYERS)
@@ -13,7 +13,8 @@
 enum (+=33)
 {
 	TASK_WARM = 1920,
-	TASK_GIVE_WEAPON
+	TASK_GIVE_WEAPON,
+	TASK_RESPAWN
 }
 
 enum 
@@ -43,22 +44,32 @@ public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR)
 
-	register_event_ex("HLTV", "event_NewRound", RegisterEvent_Global)
+	RegisterHookChain(RG_CSGameRules_PlayerKilled, "RG_PlayerKilled_Post", 1)
+	RegisterHookChain(RG_CSGameRules_PlayerSpawn, "RG_PlayerSpawn_Post", 1)
 }
 
-public event_NewRound()
+public RG_PlayerKilled_Post(iVictim, iAttacker)
 {
-	if(csgor_is_warmup())
+	if(IsPlayer(iVictim) && csgor_is_warmup())
 	{
-		new iPlayer, iPlayers[MAX_PLAYERS], iNum
-		get_players(iPlayers, iNum)
+		set_task(1.0, "task_respawn", iVictim + TASK_RESPAWN)
+	}
+}
 
-		for(new i; i < iNum; i++)
-		{
-			iPlayer = iPlayers[i]
+public task_respawn(id)
+{
+	id -= TASK_RESPAWN
 
-			set_task(2.0, "Task_Warmup", iPlayer + TASK_WARM)
-		}
+	set_entvar(id, var_health, 100)
+
+	rg_round_respawn(id)
+}
+
+public RG_PlayerSpawn_Post(iPlayer)
+{
+	if(csgor_is_warmup() && is_user_alive(iPlayer))
+	{
+		set_task(1.0, "Task_Warmup", iPlayer + TASK_WARM)
 	}
 }
 
@@ -66,9 +77,9 @@ public Task_Warmup(iPlayer)
 {
 	iPlayer -= TASK_WARM
 
-	if(csgor_is_warmup() && IsPlayer(iPlayer))
+	if(csgor_is_warmup() && is_user_alive(iPlayer))
 	{
-		if(!rg_get_user_armor(iPlayer))
+		if(rg_get_user_armor(iPlayer) != 100)
 		{
 			rg_set_user_armor(iPlayer, 100, ARMOR_VESTHELM)
 		}
@@ -81,14 +92,18 @@ public task_give_weapon(id)
 {
 	id -= TASK_GIVE_WEAPON
 
-	if(IsPlayer(id) && csgor_is_warmup())
+	if(is_user_alive(id) && csgor_is_warmup())
 	{
 		new TeamName:m_Team = get_member(id, m_iTeam)
-		new WeaponIdType:iWeaponID[3]
+		static WeaponIdType:iWeaponID[3], bool:bChecked
 
-		iWeaponID[0] = rg_get_weapon_info(g_szWarmWeapons[szPrimary][TERRORIST_TEAM], WI_ID)
-		iWeaponID[1] = rg_get_weapon_info(g_szWarmWeapons[szPrimary][CT_TEAM], WI_ID)
-		iWeaponID[2] = rg_get_weapon_info(g_szWarmWeapons[szSecondary], WI_ID)
+		if(!bChecked)
+		{
+			iWeaponID[0] = rg_get_weapon_info(g_szWarmWeapons[szPrimary][TERRORIST_TEAM], WI_ID)
+			iWeaponID[1] = rg_get_weapon_info(g_szWarmWeapons[szPrimary][CT_TEAM], WI_ID)
+			iWeaponID[2] = rg_get_weapon_info(g_szWarmWeapons[szSecondary], WI_ID)
+			bChecked = true
+		}
 
 		switch(m_Team)
 		{
