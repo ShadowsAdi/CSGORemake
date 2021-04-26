@@ -263,7 +263,7 @@ native csgor_get_user_statt_kills(id);
 native csgor_set_user_statt_kills(id, amount);
 
 /**
- * Returns player's kills on StatTrack Weapon in his viewmodel.
+ * Copies player's StatTrack skin name from his viewmodel.
  * 
  * @param id			Player index.
  * @param skinname		Buffer to copy name of the StatTrack Weapon in his viewmodel.
