@@ -4,7 +4,6 @@
 
 #define _csgo_remake_included
 
-//#pragma reqlib csgo_remake
 #pragma reqlib csgo_remake
 #if !defined AMXMODX_NOAUTOLOAD
 	#pragma loadlib csgo_remake
@@ -204,10 +203,87 @@ native csgor_ranks_num();
  * 
  * @param skinName[]		Skin name to search for index in array.
  *
- * @return			Skin index in array.
+ * @return					Skin index in array.
  *
  */
 native csgor_get_skin_index(skinName[]);
+
+/**
+ * Returns if player's skin is StatTrack.
+ * 
+ * @param id		Player index.
+ * @type			Bool
+ * @return 			True if it is, false otherwise.
+ *
+ */
+native csgor_is_skin_stattrack(id);
+
+/**
+ * Returns amount of StatTrack Skins on certain SkinID.
+ * 
+ * @param id		Player index.
+ * @param skinid 	Skin ID.
+ *
+ * @return			Amount of StatTrack Skins Num.
+ *
+ */
+native csgor_get_user_statt_skins(id, skinID);
+
+/**
+ * Sets certain StatTrack Skins with amount given.
+ * 
+ * @param id		Player index.
+ * @param skinid 	Skin ID.
+ * @param amount 	Amount of StatTrack Skins to set.
+ *
+ * @return 			-1 on error.
+ *
+ */
+native csgor_set_user_statt_skins(id, skinID, amount);
+
+/**
+ * Returns player's kills on StatTrack Weapon in his viewmodel.
+ * 
+ * @param id		Player index
+ *
+ * @return			Kills Amount.
+ *
+ */
+native csgor_get_user_statt_kills(id);
+
+/**
+ * Sets player's kills on StatTrack Weapon in his viewmodel.
+ * 
+ * @param id		Player index.
+ * @param amount	Amount of StatTrack skins.
+ *
+ * @return			Skin index in array.
+ *
+ */
+native csgor_set_user_statt_kills(id, amount);
+
+/**
+ * Returns player's kills on StatTrack Weapon in his viewmodel.
+ * 
+ * @param id			Player index.
+ * @param skinname		Buffer to copy name of the StatTrack Weapon in his viewmodel.
+ * @param len			Buffer lenght.
+ *
+ * @return				-1 on error.
+ *
+ */
+native csgor_get_user_stattrack(id, amount);
+
+/**
+ * Sets a random StatTrack skin by given amount.
+ * 
+ * @param id			Player index.
+ * @param amount		Amount of StatTrack Skins.
+ *
+ * @return				-1 on error.
+ *
+ */
+native csgor_set_random_stattrack(id, amount);
 
 /**
  * Called when a player log in account.
