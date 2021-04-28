@@ -120,7 +120,7 @@ More about documentation can be found in [csgo_remake.inc](https://github.com/Sh
 No issue, feel free to open one [here](https://github.com/ShadowsAdi/csgoremake/issues).
 
 ## Servers using this plugin
-See the list [here](https://www.gametracker.com/search/?search_by=server_variable&search_by2=csgor_version&query=&loc=_all&sort=&order=).
+See the list [here](https://www.gametracker.com/search/?search_by=server_variable&search_by2=csgore_version&query=&loc=_all&sort=&order=).
 
 ## Credits
 [Nubo](https://www.extreamcs.com/forum/nubo-u37689.html) for the original code.
