@@ -123,7 +123,7 @@ native csgor_set_user_all_skins(id);
 native csgor_set_user_skins(id, skinid, amount);
 
 /**
- * Sets a player's skins (by specific Skin ID) to desired amount.
+ * Returns total of skins in Array.
  *
  * @return			Amount of total skins.
  */
@@ -272,7 +272,7 @@ native csgor_set_user_statt_kills(id, amount);
  * @return				-1 on error.
  *
  */
-native csgor_get_user_stattrack(id, amount);
+native csgor_get_user_stattrack(id, skinname[], len);
 
 /**
  * Sets a random StatTrack skin by given amount.
