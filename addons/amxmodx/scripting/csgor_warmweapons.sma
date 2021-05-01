@@ -13,8 +13,7 @@
 enum (+=33)
 {
 	TASK_WARM = 1920,
-	TASK_GIVE_WEAPON,
-	TASK_RESPAWN
+	TASK_GIVE_WEAPON
 }
 
 enum 
@@ -44,25 +43,7 @@ public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR)
 
-	RegisterHookChain(RG_CSGameRules_PlayerKilled, "RG_PlayerKilled_Post", 1)
 	RegisterHookChain(RG_CSGameRules_PlayerSpawn, "RG_PlayerSpawn_Post", 1)
-}
-
-public RG_PlayerKilled_Post(iVictim, iAttacker)
-{
-	if(IsPlayer(iVictim) && csgor_is_warmup())
-	{
-		set_task(1.0, "task_respawn", iVictim + TASK_RESPAWN)
-	}
-}
-
-public task_respawn(id)
-{
-	id -= TASK_RESPAWN
-
-	set_entvar(id, var_health, 100)
-
-	rg_round_respawn(id)
 }
 
 public RG_PlayerSpawn_Post(iPlayer)
