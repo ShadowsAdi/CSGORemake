@@ -13,7 +13,8 @@
  * Returns a player's points.
  *
  * @param id		Player index.
- * @return			Amount of points. -1 on error.
+ *
+ * @return		Amount of points. -1 on error.
  */
 native csgor_get_user_points(id);
 
@@ -22,7 +23,8 @@ native csgor_get_user_points(id);
  *
  * @param id		Player index.
  * @param amount	A valid amount of points.
- * @return			True on success, false otherwise.
+ *
+ * @return		True on success, false otherwise.
  */
 native csgor_set_user_points(id, amount);
 
@@ -30,7 +32,8 @@ native csgor_set_user_points(id, amount);
  * Returns a player's dusts.
  *
  * @param id		Player index.
- * @return			Amount of dusts. -1 on error.
+ *
+ * @return		Amount of dusts. -1 on error.
  */
 native csgor_get_user_dusts(id);
 
@@ -39,7 +42,8 @@ native csgor_get_user_dusts(id);
  *
  * @param id		Player index.
  * @param amount	A valid amount of dusts.
- * @return			True on success, false otherwise.
+ *
+ * @return		True on success, false otherwise.
  */
 native csgor_set_user_dusts(id, amount);
 
@@ -47,7 +51,8 @@ native csgor_set_user_dusts(id, amount);
  * Returns a player's keys.
  *
  * @param id		Player index.
- * @return			Amount of keys. -1 on error.
+ *
+ * @return		Amount of keys. -1 on error.
  */
 native csgor_get_user_keys(id);
 
@@ -56,7 +61,8 @@ native csgor_get_user_keys(id);
  *
  * @param id		Player index.
  * @param amount	A valid amount of keys.
- * @return			True on success, false otherwise.
+ *
+ * @return		True on success, false otherwise.
  */
 native csgor_set_user_keys(id, amount);
 
@@ -64,7 +70,8 @@ native csgor_set_user_keys(id, amount);
  * Returns a player's cases.
  *
  * @param id		Player index.
- * @return			Amount of cases. -1 on error.
+ *
+ * @return		Amount of cases. -1 on error.
  */
 native csgor_get_user_cases(id);
 
@@ -73,7 +80,8 @@ native csgor_get_user_cases(id);
  *
  * @param id		Player index.
  * @param amount	A valid amount of cases.
- * @return			True on success, false otherwise.
+ *
+ * @return		True on success, false otherwise.
  */
 native csgor_set_user_cases(id, amount);
 
@@ -83,7 +91,8 @@ native csgor_set_user_cases(id, amount);
  * @param id		Player index.
  * @param output	Output array for rang name.
  * @param len		Max length of a output array.
- * @return			Player Rank ID. -1 on error.
+ *
+ * @return		Player Rank ID. -1 on error.
  */
 native csgor_get_user_rank(id, output[], len);
 
@@ -92,7 +101,8 @@ native csgor_get_user_rank(id, output[], len);
  *
  * @param id		Player index.
  * @param rankid	A valid Rank ID.
- * @return			True on success, false otherwise.
+ *
+ * @return		True on success, false otherwise.
  */
 native csgor_set_user_rank(id, rangid);
 
@@ -101,7 +111,7 @@ native csgor_set_user_rank(id, rangid);
  *
  * @param id		Player index.
  * @param skinid	A valid Skin ID.
- * @return			Amount of skins. -1 on error.
+ * @return		Amount of skins. -1 on error.
  */
 native csgor_get_user_skins(id, skinid);
 
@@ -118,7 +128,8 @@ native csgor_set_user_all_skins(id);
  * @param id		Player index.
  * @param skinid	A valid Skin ID.
  * @param amount	A valid amount of skins.
- * @return			True on success, false otherwise.
+ *
+ * @return		True on success, false otherwise.
  */
 native csgor_set_user_skins(id, skinid, amount);
 
@@ -134,7 +145,8 @@ native csgor_get_skins_num();
  *
  * @param skinid	Skin index.
  * @param rankid	A valid Rank ID.
- * @return			True on success, false otherwise.
+ *
+ * @return		True on success, false otherwise.
  */
 native csgor_get_skin_name(skinid, output[], len);
 
@@ -142,7 +154,8 @@ native csgor_get_skin_name(skinid, output[], len);
  * Returns whether a player is logged.
  *
  * @param id		Player index.
- * @return			True if it is, false otherwise.
+ *
+ * @return		True if it is, false otherwise.
  */
 native csgor_is_user_logged(id);
 
@@ -166,6 +179,7 @@ native csgor_is_last_round();
  * Returns if item is a skin, a case or a key.
  * 
  * @type			Bool
+ *
  * @return 			True if it is, false otherwise.
  *
  */
@@ -175,6 +189,7 @@ native csgor_is_good_item(item);
  * Returns if item is a skin.
  * 
  * @type			Bool
+ *
  * @return 			True if it is, false otherwise.
  *
  */
@@ -184,6 +199,7 @@ native csgor_is_item_skin(item);
  * Returns if warmup is active.
  * 
  * @type			Bool
+ *
  * @return 			True if it is, false otherwise.
  *
  */
@@ -203,7 +219,7 @@ native csgor_ranks_num();
  * 
  * @param skinName[]		Skin name to search for index in array.
  *
- * @return					Skin index in array.
+ * @return			Skin index in array.
  *
  */
 native csgor_get_skin_index(skinName[]);
@@ -211,8 +227,9 @@ native csgor_get_skin_index(skinName[]);
 /**
  * Returns if player's skin is StatTrack.
  * 
- * @param id		Player index.
+ * @param id			Player index.
  * @type			Bool
+ *
  * @return 			True if it is, false otherwise.
  *
  */
@@ -221,8 +238,8 @@ native csgor_is_skin_stattrack(id);
 /**
  * Returns amount of StatTrack Skins on certain SkinID.
  * 
- * @param id		Player index.
- * @param skinid 	Skin ID.
+ * @param id			Player index.
+ * @param skinid 		Skin ID.
  *
  * @return			Amount of StatTrack Skins Num.
  *
@@ -232,9 +249,9 @@ native csgor_get_user_statt_skins(id, skinID);
 /**
  * Sets certain StatTrack Skins with amount given.
  * 
- * @param id		Player index.
- * @param skinid 	Skin ID.
- * @param amount 	Amount of StatTrack Skins to set.
+ * @param id			Player index.
+ * @param skinid 		Skin ID.
+ * @param amount 		Amount of StatTrack Skins to set.
  *
  * @return 			-1 on error.
  *
@@ -244,7 +261,7 @@ native csgor_set_user_statt_skins(id, skinID, amount);
 /**
  * Returns player's kills on StatTrack Weapon in his viewmodel.
  * 
- * @param id		Player index
+ * @param id			Player index
  *
  * @return			Kills Amount.
  *
@@ -254,8 +271,8 @@ native csgor_get_user_statt_kills(id);
 /**
  * Sets player's kills on StatTrack Weapon in his viewmodel.
  * 
- * @param id		Player index.
- * @param amount	Amount of StatTrack skins.
+ * @param id			Player index.
+ * @param amount		Amount of StatTrack skins.
  *
  * @return			Skin index in array.
  *
@@ -269,7 +286,7 @@ native csgor_set_user_statt_kills(id, amount);
  * @param skinname		Buffer to copy name of the StatTrack Weapon in his viewmodel.
  * @param len			Buffer lenght.
  *
- * @return				-1 on error.
+ * @return			-1 on error.
  *
  */
 native csgor_get_user_stattrack(id, skinname[], len);
@@ -280,7 +297,7 @@ native csgor_get_user_stattrack(id, skinname[], len);
  * @param id			Player index.
  * @param amount		Amount of StatTrack Skins.
  *
- * @return				-1 on error.
+ * @return			-1 on error.
  *
  */
 native csgor_set_random_stattrack(id, amount);
@@ -288,7 +305,8 @@ native csgor_set_random_stattrack(id, amount);
 /**
  * Called when a player log in account.
  *
- * @param id		Player index.
+ * @param id			Player index.
+ *
  * @return			True if it is, false otherwise.
  */
 forward csgor_user_logging_in(id);
@@ -296,64 +314,77 @@ forward csgor_user_logging_in(id);
 /**
  * Called when a player log out from his account.
  *
- * @param id		Player index.
+ * @param id			Player index.
  */
 forward csgor_user_logging_out(id);
 
 /**
  * Called when a player register a new account.
  *
- * @param id		Player index.
+ * @param id			Player index.
  */
 forward csgor_user_register(id);
 
 /**
  * Called when a player is entering a wrong password.
  *
- * @param id			Player index.
- * @param fails			How many times player entered the wrong password.
+ * @param id				Player index.
+ * @param fails				How many times player entered the wrong password.
  */
 forward csgor_user_password_failed(id, iFail);
-
 
 /**
  * Called when a player make assist.
  *
- * @param id			Assist index.
- * @param killer		Killer index.
- * @param victim		Victim index.
- * @param head			1 if HeadShot, 0 otherwise.
+ * @param id				Assist index.
+ * @param killer			Killer index.
+ * @param victim			Victim index.
+ * @param head				1 if HeadShot, 0 otherwise.
  */
 forward csgor_user_assist(id, killer, victim, head);
 
 /**
  * Called when a player is MVP.
  *
- * @param id			MVP index.
- * @param event			Event type. (0 - Top Killer, 1 - Planter, 2 - Defuser)
- * @param kills			Player's kills.
+ * @param id				MVP index.
+ * @param event				Event type. (0 - Top Killer, 1 - Planter, 2 - Defuser)
+ * @param kills				Player's kills.
  */
 forward csgor_user_mvp(id, event, kills);
 
 /**
  * Called when a player is opening a case successfuly.
  *
- * @param id			Player index.
+ * @param id				Player index.
  */
 forward csgor_user_case_open(id);
 
 /**
  * Called when a player is crafting a weapon successfuly.
  *
- * @param id			Player index.
+ * @param id				Player index.
  */
 forward csgor_user_craft(id);
 
 /**
  * Called when a player is leveling up.
  *
- * @param id			Player index.
- * @param szRank		Buffer to copy rank name to.
- * @param iRank			Rank index in Array.
+ * @param id				Player index.
+ * @param szRank			Buffer to copy rank name to.
+ * @param iRank				Rank index in Array.
  */
 forward csgor_user_levelup(id, const szRank[], iRank);
+
+/**
+ * Called when mod has read all the configuration files.
+ *
+ * @param iSuccess			1 on success, 0 otherwise.
+ */
+forward csgor_on_configs_executed(iSuccess);
+
+/**
+ * Called when a player is eligible for drop.
+ *
+ * @param id				Player index.
+ */
+forward csgor_on_user_drop(const id)
