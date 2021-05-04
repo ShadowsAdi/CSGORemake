@@ -7,7 +7,7 @@
 
 #define PLUGIN  "[CS:GO Remake] Skin GiveAway"
 #define VERSION "1.0"
-#define AUTHOR  "Author"
+#define AUTHOR  "Shadows Adi"
 
 new g_szSkin[64]
 new g_iSkin
