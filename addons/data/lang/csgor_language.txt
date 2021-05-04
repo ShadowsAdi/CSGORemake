@@ -287,6 +287,16 @@ CSGOR_COINFLIP_YOU_LOSE_X_WITH_X = ^1Ai pierdut Coinflip-ul cu ^4%s^1, skin-ul p
 CSGOR_NO_ACTIVE_SKIN = Nu ai niciun skin in mana.
 CSGOR_NO_ACTIVE_SKIN_HUD = Niciun Skin Activ.
 
+CSGOR_GIVEAWAY_MENU = GiveAway
+CSGOR_GIVEAWAY_SKIN = Skin \r[%s]
+CSGOR_GIVEAWAY_PLAYERS = Jucatori \r[%d]
+CSGOR_GIVEAWAY_COUNTDOWN = Durata \r[%d runde ramase]
+CSGOR_GIVEAWAY_JOIN = Intra la GiveAway
+CSGOR_GIVEAWAY_JOINED = Deja participi
+CSGOR_GIVEAWAY_PLAYER_JOINED = ^4%n^1 a intrat la giveaway pentru ^4%s^1.
+CSGOR_GIVEAWAY_WON_BY = Jucatorul ^4%n^1 a castigat ^4%s^1 la GiveAway.
+CSGOR_GIVEAWAY_CLOSED = Giveaway-ul este ^4inchis ^1pentru moment.
+
 [en]
 CSGOR_NO_DROP_SKINS = There are no drop type skins!
 CSGOR_NO_CRAFT_SKINS = There are no craft type skins!
@@ -576,3 +586,13 @@ CSGOR_COINFLIP_YOU_WON_X_WITH_X = ^1You've won the Coinflip aganist ^4%s^1, skin
 CSGOR_COINFLIP_YOU_LOSE_X_WITH_X = ^1You've lost the Coinflip aganist ^4%s^1, skin lost: ^4^%s^1. More luck next time!
 CSGOR_NO_ACTIVE_SKIN = You have no skin in your hand.
 CSGOR_NO_ACTIVE_SKIN_HUD = No Active Skin.
+
+CSGOR_GIVEAWAY_MENU = GiveAway
+CSGOR_GIVEAWAY_SKIN = Skin \r[%s]
+CSGOR_GIVEAWAY_PLAYERS = Players \r[%d]
+CSGOR_GIVEAWAY_COUNTDOWN = Countdown \r[%d rounds left]
+CSGOR_GIVEAWAY_JOIN = Join GiveAway
+CSGOR_GIVEAWAY_JOINED = Already Joined
+CSGOR_GIVEAWAY_PLAYER_JOINED = ^4%n^1 has joined giveaway for ^4%s^1.
+CSGOR_GIVEAWAY_WON_BY = Player ^4%n^1 won skin ^4%s^1 at GiveAway.
+CSGOR_GIVEAWAY_CLOSED = Giveaway is ^4closed ^1for now.
