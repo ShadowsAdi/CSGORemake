@@ -6,16 +6,34 @@
 #define CSGO_TAG "[CS:GO Remake]"
 
 #define PLUGIN  "[CS:GO Remake] Skin GiveAway"
-#define VERSION "1.0"
+#define VERSION "1.1"
 #define AUTHOR  "Shadows Adi"
 
-new g_szSkin[64]
-new g_iSkin
-new g_cType
-new bool:g_bJoined[MAX_PLAYERS + 1]
-new g_iPlayersNum
-new g_cCountDown
+enum _:SkinInfo
+{
+	iSkin,
+	szSkin[64]
+}
+
+enum _:PlayerInfo
+{
+	bool:bJoined[MAX_PLAYERS + 1],
+	iNum
+}
+
+enum _:CvarInfo
+{
+	iType = 0,
+	iCountdown,
+	iMinPlayers
+}
+
+new g_eCvars[CvarInfo]
+
+new g_eSkin[SkinInfo]
+new g_ePdata[PlayerInfo]
 new bool:g_bOpened = true
+new Array:g_aParticipants
 
 public plugin_init()
 {
@@ -24,10 +42,13 @@ public plugin_init()
 	create_cvar("csgor_giveaway_author", AUTHOR, FCVAR_SERVER|FCVAR_EXTDLL|FCVAR_CLIENTDLL)
 
 	bind_pcvar_num(create_cvar("csgor_giveaway_stattrack", "1", FCVAR_NONE, "GiveAway a StatTrack skin?",
-		.has_min = true, .min_val = 0.0, .has_max = true, .max_val = 1.0), g_cType)
+		.has_min = true, .min_val = 0.0, .has_max = true, .max_val = 1.0), g_eCvars[iType])
 
 	bind_pcvar_num(create_cvar("csgor_giveaway_countdown", "13", FCVAR_NONE, "Number of rounds when giveaway is finising.",
-		.has_min = true, .min_val = 1.0), g_cCountDown)
+		.has_min = true, .min_val = 1.0), g_eCvars[iCountdown])
+
+	bind_pcvar_num(create_cvar("csgor_giveaway_minplayers", "2", FCVAR_NONE, "Number of required players to start a giveaway.",
+		.has_min = true, .min_val = 2.0), g_eCvars[iMinPlayers])
 
 	register_concmd("giveaway", "cmd_giveaway")
 	register_clcmd("say /giveaway", "cmd_giveaway")
@@ -39,18 +60,38 @@ public csgor_on_configs_executed(iSuccess)
 {
 	if(iSuccess)
 	{
-		g_iSkin = random(csgor_get_skins_num())
-		csgor_get_skin_name(g_iSkin, g_szSkin, charsmax(g_szSkin))
-		if(g_cType)
+		g_eSkin[iSkin] = random(csgor_get_skins_num())
+		csgor_get_skin_name(g_eSkin[iSkin], g_eSkin[szSkin], charsmax(g_eSkin[szSkin]))
+		if(g_eCvars[iType])
 		{
-			format(g_szSkin, charsmax(g_szSkin), "StatTrack %s", g_szSkin)
+			format(g_eSkin[szSkin], charsmax(g_eSkin[szSkin]), "StatTrack %s", g_eSkin[szSkin])
 		}
 	}
 }
 
+public plugin_natives()
+{
+	g_aParticipants = ArrayCreate(1, 1)
+}
+
+public plugin_end()
+{
+	ArrayDestroy(g_aParticipants)
+}
+
 public client_putinserver(id)
 {
-	g_bJoined[id] = false
+	g_ePdata[bJoined][id] = false
+}
+
+public client_disconnected(id, bool:drop, message[], maxlen)
+{
+	if(g_ePdata[bJoined][id] && g_bOpened)
+	{
+		ArrayDeleteItem(g_aParticipants, ArrayFindValue(g_aParticipants, id))
+		g_ePdata[iNum]--
+		g_ePdata[bJoined][id] = false
+	}
 }
 
 public cmd_giveaway(id)
@@ -72,20 +113,26 @@ public cmd_giveaway(id)
 
 public _ShowGiveawayMenu(id)
 {
+	if(!g_bOpened)
+	{
+		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_GIVEAWAY_CLOSED")
+		return;
+	}
+
 	new szTemp[128]
 	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", CSGO_TAG, LANG_SERVER, "CSGOR_GIVEAWAY_MENU")
 	new menu = menu_create(szTemp, "handle_giveaway_menu")
 
-	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, "CSGOR_GIVEAWAY_SKIN", g_szSkin)
+	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, "CSGOR_GIVEAWAY_SKIN", g_eSkin[szSkin])
 	menu_additem(menu, szTemp)
 
-	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, "CSGOR_GIVEAWAY_PLAYERS", g_iPlayersNum)
+	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, "CSGOR_GIVEAWAY_PLAYERS", g_ePdata[iNum])
 	menu_additem(menu, szTemp)
 
-	formatex(szTemp, charsmax(szTemp), "\w%L^n", LANG_SERVER, "CSGOR_GIVEAWAY_COUNTDOWN", g_cCountDown)
+	formatex(szTemp, charsmax(szTemp), "\w%L^n", LANG_SERVER, "CSGOR_GIVEAWAY_COUNTDOWN", g_eCvars[iCountdown])
 	menu_additem(menu, szTemp)
 
-	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, !g_bJoined[id] ? "CSGOR_GIVEAWAY_JOIN" : "CSGOR_GIVEAWAY_JOINED")
+	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, !g_ePdata[bJoined][id] ? "CSGOR_GIVEAWAY_JOIN" : "CSGOR_GIVEAWAY_JOINED")
 	menu_additem(menu, szTemp)
 
 	menu_display(id, menu)
@@ -107,11 +154,12 @@ public handle_giveaway_menu(id, menu, item)
 		}
 		case 3:
 		{
-			if(!g_bJoined[id])
+			if(!g_ePdata[bJoined][id])
 			{
-				g_bJoined[id] = true
-				g_iPlayersNum += 1
-				client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_GIVEAWAY_PLAYER_JOINED", id, g_szSkin)
+				g_ePdata[bJoined][id] = true
+				g_ePdata[iNum] += 1
+				ArrayPushCell(g_aParticipants, id)
+				client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_GIVEAWAY_PLAYER_JOINED", id, g_eSkin[szSkin])
 			}
 			_ShowGiveawayMenu(id)
 		}
@@ -123,19 +171,17 @@ public handle_giveaway_menu(id, menu, item)
 
 public ev_NewRound()
 {
-	if(g_iPlayersNum > 0 && g_bOpened)
+	if(g_ePdata[iNum] >= g_eCvars[iMinPlayers] && g_bOpened)
 	{
-		g_cCountDown -= 1
+		g_eCvars[iCountdown]--
 
-		if(g_cCountDown == 0)
+		if(g_eCvars[iCountdown] == 0)
 		{
 			new index = GetWinner()
-			if(is_user_connected(index))
-			{
-				client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_GIVEAWAY_WON_BY", g_bJoined[index], g_szSkin)
-				g_cType ? csgor_set_user_statt_skins(index, g_iSkin, 1) : csgor_set_user_skins(index, g_iSkin, 1)
-				g_bOpened = false
-			}
+
+			client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_GIVEAWAY_WON_BY", index, g_eSkin[szSkin])
+			g_eCvars[iType] ? csgor_set_user_statt_skins(index, g_eSkin[iSkin], 1) : csgor_set_user_skins(index, g_eSkin[iSkin], 1)
+			g_bOpened = false
 		}
 	}
 }
@@ -144,26 +190,32 @@ stock GetWinner()
 {
 	static iWinner = -1
 
-	if(!g_iPlayersNum || iWinner)
+	if(g_ePdata[iNum] < g_eCvars[iMinPlayers])
 	{
-		return PLUGIN_HANDLED
+		return iWinner
 	}
 
-	new iPlayer, iPlayers[MAX_PLAYERS], iNum
-	get_players(iPlayers, iNum, "ch")
-	new iRand = random(iNum)
+	new bool:bChoosen = false
+	new iSize = ArraySize(g_aParticipants)
+	new iRandom
 
-	for(new i; i < iNum; i++)
+	do 
 	{
-		iPlayer = iPlayers[i]
+		iRandom = random_num(0, iSize - 1)
+		iWinner = ArrayGetCell(g_aParticipants, iRandom)
 
-		if(!g_bJoined[iPlayer])
+		if(!is_user_connected(iWinner))
 		{
-			continue
+			ArrayDeleteItem(g_aParticipants, iRandom)
+			iSize--
 		}
+		else
+		{
+			bChoosen = true
+			return iWinner
+		}
+	} 
+	while(!bChoosen && iSize > 0)
 
-		iWinner = g_bJoined[iPlayers[iRand]]
-	}
-
-	return iWinner
+	return -1
 }
