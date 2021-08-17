@@ -141,10 +141,11 @@ native csgor_set_user_skins(id, skinid, amount);
 native csgor_get_skins_num();
 
 /**
- * Sets a player's Rank ID. Set the appropriate amount of kills.
+ * Get skin name with given skinID.
  *
  * @param skinid    Skin index.
- * @param rankid    A valid Rank ID.
+ * @param output    Output array for skin name.
+ * @param lem       Max length of a output array.
  *
  * @return      True on success, false otherwise.
  */
