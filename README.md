@@ -1,5 +1,5 @@
 # CSGO Remake V 2.6
-<img align="center" src="https://i.imgur.com/Vqt08pg.png" alt="CS:GO Remake"/>
+<img align="center" src="https://i.imgur.com/ByWZCEh.jpg" alt="CS:GO Remake"/>
 
 Mod inspired by the popular Counter Strike: Global Offensive.
 Running only on AmxModX 1.8.3 / 1.9.0 / 1.10.0
