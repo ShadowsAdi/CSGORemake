@@ -287,7 +287,7 @@ native csgor_set_user_statt_kills(id, amount);
  * @param skinname      Buffer to copy name of the StatTrack Weapon in his viewmodel.
  * @param len           Buffer lenght.
  *
- * @return          -1 on error.
+ * @return              -1 on error.
  *
  */
 native csgor_get_user_stattrack(id, skinname[], len);
@@ -298,17 +298,27 @@ native csgor_get_user_stattrack(id, skinname[], len);
  * @param id            Player index.
  * @param amount        Amount of StatTrack Skins.
  *
- * @return          -1 on error.
+ * @return              -1 on error.
  *
  */
 native csgor_set_random_stattrack(id, amount);
+
+/**
+ * Returns location of configuration file.
+ * 
+ * @noparam
+ *
+ * @return          Config location as string.
+ *
+ */
+native csgo_get_config_location();
 
 /**
  * Called when a player log in account.
  *
  * @param id            Player index.
  *
- * @return          True if it is, false otherwise.
+ * @return              True if it is, false otherwise.
  */
 forward csgor_user_logging_in(id);
 
@@ -329,8 +339,8 @@ forward csgor_user_register(id);
 /**
  * Called when a player is entering a wrong password.
  *
- * @param id                Player index.
- * @param fails             How many times player entered the wrong password.
+ * @param id           	Player index.
+ * @param fails        	How many times player entered the wrong password.
  */
 forward csgor_user_password_failed(id, iFail);
 
