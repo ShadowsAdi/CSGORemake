@@ -1,4 +1,4 @@
-# CSGO Remake V 2.6
+# CSGO Remake V 2.10
 <img align="center" src="https://i.imgur.com/ByWZCEh.jpg" alt="CS:GO Remake"/>
 
 Mod inspired by the popular Counter Strike: Global Offensive.
