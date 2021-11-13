@@ -9,6 +9,16 @@
     #pragma loadlib csgo_remake
 #endif
 
+enum _:FileSections
+{
+    secRanks = 1,
+    secDefaultModels,
+    secSkins,
+    secPromocodes,
+    secSortedMenu,
+    secDynamicMenu
+}
+
 /**
  * Returns a player's points.
  *
@@ -306,12 +316,12 @@ native csgor_set_random_stattrack(id, amount);
 /**
  * Returns location of configuration file.
  * 
- * @noparam
+ * @param szLocation    Buffer to copy config location
  *
- * @return          Config location as string.
+ * @noreturn
  *
  */
-native csgo_get_config_location();
+native csgo_get_config_location(szLocation[64]);
 
 /**
  * Called when a player log in account.
@@ -319,6 +329,8 @@ native csgo_get_config_location();
  * @param id            Player index.
  *
  * @return              True if it is, false otherwise.
+ * 
+ * @noreturn
  */
 forward csgor_user_logging_in(id);
 
@@ -326,6 +338,8 @@ forward csgor_user_logging_in(id);
  * Called when a player log out from his account.
  *
  * @param id            Player index.
+ * 
+ * @noreturn
  */
 forward csgor_user_logging_out(id);
 
@@ -333,6 +347,8 @@ forward csgor_user_logging_out(id);
  * Called when a player register a new account.
  *
  * @param id            Player index.
+ * 
+ * @noreturn
  */
 forward csgor_user_register(id);
 
@@ -341,6 +357,8 @@ forward csgor_user_register(id);
  *
  * @param id           	Player index.
  * @param fails        	How many times player entered the wrong password.
+ * 
+ * @noreturn
  */
 forward csgor_user_password_failed(id, iFail);
 
@@ -351,6 +369,8 @@ forward csgor_user_password_failed(id, iFail);
  * @param killer            Killer index.
  * @param victim            Victim index.
  * @param head              1 if HeadShot, 0 otherwise.
+ * 
+ * @noreturn
  */
 forward csgor_user_assist(id, killer, victim, head);
 
@@ -360,6 +380,8 @@ forward csgor_user_assist(id, killer, victim, head);
  * @param id                MVP index.
  * @param event             Event type. (0 - Top Killer, 1 - Planter, 2 - Defuser)
  * @param kills             Player's kills.
+ * 
+ * @noreturn
  */
 forward csgor_user_mvp(id, event, kills);
 
@@ -367,6 +389,8 @@ forward csgor_user_mvp(id, event, kills);
  * Called when a player is opening a case successfuly.
  *
  * @param id                Player index.
+ * 
+ * @noreturn
  */
 forward csgor_user_case_open(id);
 
@@ -374,6 +398,8 @@ forward csgor_user_case_open(id);
  * Called when a player is crafting a weapon successfuly.
  *
  * @param id                Player index.
+ * 
+ * @noreturn
  */
 forward csgor_user_craft(id);
 
@@ -383,6 +409,8 @@ forward csgor_user_craft(id);
  * @param id                Player index.
  * @param szRank            Buffer to copy rank name to.
  * @param iRank             Rank index in Array.
+ * 
+ * @noreturn
  */
 forward csgor_user_levelup(id, szRank[], iRank);
 
@@ -390,6 +418,8 @@ forward csgor_user_levelup(id, szRank[], iRank);
  * Called when mod has read all the configuration files.
  *
  * @param iSuccess          1 on success, 0 otherwise.
+ * 
+ * @noreturn
  */
 forward csgor_on_configs_executed(iSuccess);
 
@@ -397,5 +427,17 @@ forward csgor_on_configs_executed(iSuccess);
  * Called when a player is eligible for drop.
  *
  * @param id                Player index.
+ * 
+ * @noreturn
  */
 forward csgor_on_user_drop(id)
+
+/** Called while the configuration file is currently in reading
+ * 
+ * @param szBuffer[]        Buffer which stores data from every line.
+ * @param iSection          Indicates currently section from file.
+ * @param iLine             Indicates line number in file.
+ * 
+ * @noreturn
+ */
+forward csgor_read_configuration_data(szBuffer[], FileSections:iSection, iLine)
