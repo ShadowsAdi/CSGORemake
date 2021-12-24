@@ -34,7 +34,7 @@ native csgor_get_user_points(id);
  * @param id        Player index.
  * @param amount    A valid amount of points.
  *
- * @return      True on success, false otherwise.
+ * @return          1 on success, -1 otherwise.
  */
 native csgor_set_user_points(id, amount);
 
@@ -43,7 +43,7 @@ native csgor_set_user_points(id, amount);
  *
  * @param id        Player index.
  *
- * @return      Amount of dusts. -1 on error.
+ * @return          Amount of dusts. -1 on error.
  */
 native csgor_get_user_dusts(id);
 
@@ -53,7 +53,7 @@ native csgor_get_user_dusts(id);
  * @param id        Player index.
  * @param amount    A valid amount of dusts.
  *
- * @return      True on success, false otherwise.
+ * @return          1 on success, -1 otherwise.
  */
 native csgor_set_user_dusts(id, amount);
 
@@ -62,7 +62,7 @@ native csgor_set_user_dusts(id, amount);
  *
  * @param id        Player index.
  *
- * @return      Amount of keys. -1 on error.
+ * @return          Amount of keys. -1 on error.
  */
 native csgor_get_user_keys(id);
 
@@ -72,7 +72,7 @@ native csgor_get_user_keys(id);
  * @param id        Player index.
  * @param amount    A valid amount of keys.
  *
- * @return      True on success, false otherwise.
+ * @return          1 on success, -1 otherwise.
  */
 native csgor_set_user_keys(id, amount);
 
@@ -91,7 +91,7 @@ native csgor_get_user_cases(id);
  * @param id        Player index.
  * @param amount    A valid amount of cases.
  *
- * @return      True on success, false otherwise.
+ * @return      1 on success, -1 otherwise.
  */
 native csgor_set_user_cases(id, amount);
 
@@ -99,8 +99,8 @@ native csgor_set_user_cases(id, amount);
  * Returns a player's Rank ID. Set Rang name in output.
  *
  * @param id        Player index.
- * @param output    Output array for rang name.
- * @param len       Max length of a output array.
+ * @param output    Output buffer for rang name.
+ * @param len       Max length of a output buffer.
  *
  * @return      Player Rank ID. -1 on error.
  */
@@ -112,7 +112,7 @@ native csgor_get_user_rank(id, output[], len);
  * @param id        Player index.
  * @param rankid    A valid Rank ID.
  *
- * @return      True on success, false otherwise.
+ * @return      1 on success, -1 otherwise.
  */
 native csgor_set_user_rank(id, rangid);
 
@@ -121,6 +121,7 @@ native csgor_set_user_rank(id, rangid);
  *
  * @param id        Player index.
  * @param skinid    A valid Skin ID.
+ * 
  * @return      Amount of skins. -1 on error.
  */
 native csgor_get_user_skins(id, skinid);
@@ -139,7 +140,7 @@ native csgor_set_user_all_skins(id);
  * @param skinid    A valid Skin ID.
  * @param amount    A valid amount of skins.
  *
- * @return      True on success, false otherwise.
+ * @return      1 on success, -1 otherwise.
  */
 native csgor_set_user_skins(id, skinid, amount);
 
@@ -154,10 +155,10 @@ native csgor_get_skins_num();
  * Get skin name with given skinID.
  *
  * @param skinid    Skin index.
- * @param output    Output array for skin name.
- * @param lem       Max length of a output array.
+ * @param output    Output buffer for skin name.
+ * @param lem       Max length of a output buffer.
  *
- * @return      True on success, false otherwise.
+ * @return      1 on success, -1 otherwise.
  */
 native csgor_get_skin_name(skinid, output[], len);
 
@@ -230,7 +231,7 @@ native csgor_ranks_num();
  * 
  * @param skinName[]        Skin name to search for index in array.
  *
- * @return          Skin index in array.
+ * @return 				Skin index in array.
  *
  */
 native csgor_get_skin_index(skinName[]);
