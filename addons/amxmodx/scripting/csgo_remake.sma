@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.13"
+#define VERSION "2.14"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -300,7 +300,8 @@ enum _:EnumCvars
 	Float:flShortThrowVelocity,
 	Float:flRouletteCooldown,
 	iRoundEndSounds,
-	iCopyRight
+	iCopyRight,
+	iCustomChat
 }
 
 enum _:EnumRoundStats
@@ -396,6 +397,7 @@ new Array:g_aPromocodesUsage;
 new Array:g_aPromocodesGift;
 new Array:g_aSkinsMenu;
 new Array:g_aDynamicMenu;
+new Array:g_aSkipChat;
 
 new g_iRanksNum;
 new g_iSkinsNum;
@@ -418,9 +420,10 @@ new g_iDropSkinNum;
 new g_iCraftSkinNum;
 
 new g_szName[ MAX_PLAYERS + 1 ][32];
+new g_szSteamID[ MAX_PLAYERS + 1][32];
 new g_szUserPassword[ MAX_PLAYERS + 1 ][16];
 new g_szUser_SavedPass[ MAX_PLAYERS + 1 ][16];
-new g_szUserLastIP[ MAX_PLAYERS + 1 ];
+new g_szUserLastIP[ MAX_PLAYERS + 1 ][19];
 new g_iUserPassFail[MAX_PLAYERS + 1];
 
 new g_szUserPromocode[ MAX_PLAYERS + 1 ][32];
@@ -495,7 +498,7 @@ new g_iDamage[ MAX_PLAYERS + 1 ][33];
 new g_iRedPoints[ MAX_PLAYERS + 1 ];
 new g_iWhitePoints[ MAX_PLAYERS + 1 ];
 new g_iYellowPoints[ MAX_PLAYERS + 1 ];
-new g_eEnumBooleans[MAX_PLAYERS + 1][EnumBooleans]
+new g_eEnumBooleans[MAX_PLAYERS + 1][EnumBooleans];
 new g_bitIsConnected;
 new g_bitIsAlive;
 new g_bitShortThrow;
@@ -658,7 +661,7 @@ new Float:HUD_POS_X = 0.02;
 new Float:HUD_POS_Y = 0.90;
 #endif
 
-new g_iMaxPlayers
+new g_iMaxPlayers;
 
 const PRIMARY_WEAPONS_BIT_SUM = (1<<CSW_SCOUT)|(1<<CSW_XM1014)|(1<<CSW_MAC10)|(1<<CSW_AUG)|(1<<CSW_UMP45)|(1<<CSW_SG550)|(1<<CSW_GALIL)|(1<<CSW_FAMAS)|(1<<CSW_AWP)|(1<<CSW_MP5NAVY)|(1<<CSW_M249)|(1<<CSW_M3)|(1<<CSW_M4A1)|(1<<CSW_TMP)|(1<<CSW_G3SG1)|(1<<CSW_SG552)|(1<<CSW_AK47)|(1<<CSW_P90);
 const SECONDARY_WEAPONS_BIT_SUM = (1<<CSW_P228)|(1<<CSW_ELITE)|(1<<CSW_FIVESEVEN)|(1<<CSW_USP)|(1<<CSW_GLOCK18)|(1<<CSW_DEAGLE);
@@ -666,7 +669,7 @@ const SECONDARY_WEAPONS_BIT_SUM = (1<<CSW_P228)|(1<<CSW_ELITE)|(1<<CSW_FIVESEVEN
 public plugin_init()
 {
 	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "plugin_init() start plugin")
+	log_to_file("csgor_debug_logs.log", "plugin_init() start plugin");
 	#endif
 
 	register_plugin(PLUGIN, VERSION, AUTHOR);
@@ -832,14 +835,17 @@ public plugin_init()
 	pcvar = create_cvar("csgor_fast_load", "1", FCVAR_NONE, "Fast resources load for players", .has_max = true, .max_val = 1.0);
 	bind_pcvar_num(pcvar, g_iCvars[iFastLoad]);
 
-	pcvar = create_cvar("csgor_grenade_shortthrow_velocity", "0.50", FCVAR_NONE, "Velocity ( in floating value ) of a grenade when it's in short throw mode.")
+	pcvar = create_cvar("csgor_grenade_shortthrow_velocity", "0.50", FCVAR_NONE, "Velocity ( in floating value ) of a grenade when it's in short throw mode.");
 	bind_pcvar_float(pcvar, g_iCvars[flShortThrowVelocity]);
 
 	pcvar = create_cvar("csgor_enable_roundend_sounds", "1", FCVAR_NONE, "(0|1) Enable / Disable Round End sounds.", true, 0.0, true, 1.0);
 	bind_pcvar_num(pcvar, g_iCvars[iRoundEndSounds]);
 
-	pcvar = create_cvar("csgor_show_copyright", "1", FCVAR_NONE, "(0|1) Show / Hide Copyright Information ( Plugin Author )", true, 0.0, true, 1.0),
+	pcvar = create_cvar("csgor_show_copyright", "1", FCVAR_NONE, "(0|1) Show / Hide Copyright Information ( Plugin Author )", true, 0.0, true, 1.0);
 	bind_pcvar_num(pcvar, g_iCvars[iCopyRight]);
+
+	pcvar = create_cvar("csgor_custom_chat", "1", FCVAR_NONE, "(0|1) Enable / Disable Mod's custom chat ( Chat rank, chat prefix, etc )", true, 0.0, true, 1.0);
+	bind_pcvar_num(pcvar, g_iCvars[iCustomChat]);
 
 	AutoExecConfig(true, "csgo_remake", "csgor" );
 	
@@ -859,9 +865,8 @@ public plugin_init()
 	register_event("TextMsg", "event_Game_Commencing", "a", "2&#Game_C");
 	register_event("SendAudio", "ev_RoundWon_T", "a", "2&%!MRAD_terwin");
 	register_event("SendAudio", "ev_RoundWon_CT", "a", "2=%!MRAD_ctwin");
-	register_event(EVENT_SVC_INTERMISSION, "ev_Intermission", "a")
+	register_event(EVENT_SVC_INTERMISSION, "ev_Intermission", "a");
 
-	register_forward(FM_UpdateClientData, "FM_Hook_UpdateClientData_Post", 1);
 	register_forward(FM_PlaybackEvent, "FM_Hook_PlayBackEvent_Pre");
 	register_forward(FM_PlaybackEvent, "FM_Hook_PlayBackEvent_Primary_Pre");
 
@@ -1012,13 +1017,15 @@ public DetectSaveType()
 			{
 				log_to_file("csgo_remake_errors.log", "CSGO REMAKE Failed to connect to database. Make sure databse settings are right!");
 				SQL_FreeHandle(g_iSqlConnection);
-				return
+				return;
 			}
 
 			new szQueryData[600];
 			formatex(szQueryData, charsmax(szQueryData),"CREATE TABLE IF NOT EXISTS `csgor_data` \
 				(`ID` INT NOT NULL AUTO_INCREMENT,\
 				`Name` VARCHAR(32) NOT NULL,\
+				`SteamID` VARCHAR(32) NOT NULL,\
+				`Last IP` VARCHAR(19) NOT NULL,\
 				`Password` VARCHAR(32) NOT NULL,\
 				`ChatTag` VARCHAR(16) NOT NULL,\
 				`ChatTag Color` VARCHAR(4) NOT NULL,\
@@ -1031,12 +1038,36 @@ public DetectSaveType()
 				`Bonus Timestamp` INT NOT NULL,\
 				`Promocode` INT(2) NOT NULL,\
 				PRIMARY KEY(ID, Name));");
+
 			new Handle:iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData);
 		
 			if(!SQL_Execute(iQueries))
 			{
 				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError));
 				log_amx(g_szSqlError);
+			}
+
+			formatex(szQueryData, charsmax(szQueryData), "SELECT `SteamID` FROM `csgor_data`");
+
+			iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData);
+		
+			if(!SQL_Execute(iQueries))
+			{
+				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError));
+
+				if(containi(g_szSqlError, "Unknown column") != -1)
+				{
+					formatex(szQueryData, charsmax(szQueryData), "ALTER TABLE `csgor_data` ADD `SteamID` varchar(32) NOT NULL AFTER `Name`, \
+						ADD `Last IP` varchar(19) NOT NULL AFTER `SteamID`;");
+
+					iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData);
+			
+					if(!SQL_Execute(iQueries))
+					{
+						SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError));
+						log_amx(g_szSqlError);
+					}
+				}
 			}
 
 			formatex(szQueryData, charsmax(szQueryData), "CREATE TABLE IF NOT EXISTS `csgor_skins` \
@@ -1055,7 +1086,7 @@ public DetectSaveType()
 			{
 				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError));
 				log_amx(g_szSqlError);
-				return
+				return;
 			}
 
 			SQL_FreeHandle(iQueries);
@@ -1084,9 +1115,10 @@ public plugin_precache()
 	}
 
 	new szBuffer[428], FileSections:iSection, iLine;
-	new szLeftpart[64], szRightPart[24], iWeaponID[4], szNewModel[128], iDefaultSubmodel[8];
-	new weaponid[4], szWeaponName[64], szWeaponModel[64], weaponP[64], weapontype[4], weaponchance[8], weaponcostmin[8], weapondusts[8], weaponsubmodel[8];
+	new szLeftpart[MAX_SKIN_NAME], szRightPart[24], iWeaponID[4], szNewModel[128], iDefaultSubmodel[8];
+	new weaponid[4], szWeaponName[MAX_SKIN_NAME], szWeaponModel[MAX_SKIN_NAME], weaponP[MAX_SKIN_NAME], weapontype[4], weaponchance[8], weaponcostmin[8], weapondusts[8], weaponsubmodel[8];
 	new szPromocode[32], szPromocode_usage[6], szPromocode_gift[4];
+	new szChatSkip[20]
 	new Weapons[EnumSkinsMenuInfo];
 	new MenuInfo[EnumDynamicMenu];
 	new iEnd = -1;
@@ -1189,8 +1221,13 @@ public plugin_precache()
 				}
 				case secDynamicMenu:
 				{
-					parse(szBuffer, MenuInfo[szMenuName], charsmax(MenuInfo[szMenuName]), MenuInfo[szMenuCMD], charsmax(MenuInfo[szMenuCMD]))
+					parse(szBuffer, MenuInfo[szMenuName], charsmax(MenuInfo[szMenuName]), MenuInfo[szMenuCMD], charsmax(MenuInfo[szMenuCMD]));
 					ArrayPushArray(g_aDynamicMenu, MenuInfo);
+				}
+				case secSkipChat:
+				{
+					parse(szBuffer, szChatSkip, charsmax(szChatSkip))
+					ArrayPushString(g_aSkipChat, szChatSkip);
 				}
 			}
 
@@ -1231,7 +1268,7 @@ public plugin_precache()
 	precache_sound(USP_SHOOT_SOUND);
 	precache_sound(USP_SILENT_SOUND);
 	
-	set_task(0.1, "precache_mess", iEnd)
+	set_task(0.1, "precache_mess", iEnd);
 }
 
 public precache_mess(iEnd)
@@ -1241,7 +1278,7 @@ public precache_mess(iEnd)
 	#endif
 
 	log_amx("CS:GO Remake by Shadows Adi (v%s).", VERSION);
-	ExecuteForward(g_iForwards[file_executed], g_iForwardResult, iEnd)
+	ExecuteForward(g_iForwards[file_executed], g_iForwardResult, iEnd);
 }
 
 RegisterForwards()
@@ -1313,6 +1350,7 @@ public plugin_natives()
 	g_aPromocodesGift = ArrayCreate(2);
 	g_aSkinsMenu = ArrayCreate(EnumSkinsMenuInfo);
 	g_aDynamicMenu = ArrayCreate(EnumDynamicMenu);
+	g_aSkipChat = ArrayCreate(20);
 	register_native("csgor_get_user_points", "native_get_user_points");
 	register_native("csgor_set_user_points", "native_set_user_points");
 	register_native("csgor_get_user_cases", "native_get_user_cases");
@@ -1339,13 +1377,15 @@ public plugin_natives()
 	register_native("csgor_ranks_num", "native_ranks_num");
 	register_native("csgor_is_skin_stattrack", "native_is_skin_stattrack");
 	register_native("csgor_get_user_statt_skins", "native_get_user_statt_skins");
-	register_native("csgor_set_user_statt_skins", "native_set_user_statt_skins")
+	register_native("csgor_set_user_statt_skins", "native_set_user_statt_skins");
 	register_native("csgor_get_user_statt_kills", "native_get_user_stattrack_kills");
 	register_native("csgor_set_user_statt_kills", "native_set_user_stattrack_kills");
 	register_native("csgor_get_user_stattrack", "native_get_user_stattrack");
 	register_native("csgor_set_random_stattrack", "native_set_random_stattrack");
 	register_native("csgo_get_user_body", "native_csgo_get_user_body");
 	register_native("csgo_get_config_location", "native_csgo_get_config_location");
+	register_native("csgo_get_user_skin", "native_csgo_get_user_skin");
+	register_native("csgo_get_database_data", "native_csgo_get_database_data");
 }
 
 public plugin_end()
@@ -1373,6 +1413,7 @@ public plugin_end()
 	ArrayDestroy(g_aPromocodesGift);
 	ArrayDestroy(g_aSkinsMenu);
 	ArrayDestroy(g_aDynamicMenu);
+	ArrayDestroy(g_aSkipChat)
 	switch(g_iCvars[iSaveType])
 	{
 		case NVAULT:
@@ -1423,20 +1464,22 @@ public client_connect(id)
 public client_putinserver(id)
 {
 	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "client_putinserver()")
+	log_to_file("csgor_debug_logs.log", "client_putinserver()");
 	#endif
 
 	DestroyTask(id + TASK_INFO);
 	SetPlayerBit(g_bitIsConnected, id);
 	
 	get_user_name(id, g_szName[id], charsmax(g_szName[]));
+	get_user_authid(id, g_szSteamID[id], charsmax(g_szSteamID[]));
+	get_user_ip(id, g_szUserLastIP[id], charsmax(g_szUserLastIP[]) , 1);
 	
 	if(g_iCvars[iCopyRight])
 	{
 		set_task(15.0, "task_Info", id + TASK_INFO);
 	}
 
-	ResetData(id)
+	ResetData(id);
 }
 
 ResetData(id, bool:bWithoutPassword = false)
@@ -1498,7 +1541,7 @@ ResetData(id, bool:bWithoutPassword = false)
 	g_bUserPlay[id] = false;
 	g_iUserJackpotItem[id] = -1;
 	g_bUserPlayJackpot[id] = false;
-	get_user_ip(id, g_szUserLastIP, charsmax(g_szUserLastIP) , 1);
+
 	for (new iWeaponID = 1; iWeaponID <= CSW_P90; iWeaponID++)
 	{
 		g_iUserSelectedSkin[id][iWeaponID] = -1;
@@ -2312,7 +2355,7 @@ public task_HUD(id)
 			case iAdvancedHUD:
 			{
 				new userRank = g_iUserRank[id];
-				new szSkin[48], szTemp[64];
+				new szSkin[MAX_SKIN_NAME], szTemp[128];
 				new iWeaponID = get_user_weapon(id);
 
 				if(g_iStattrackWeap[id][iSelected][iWeaponID] < 0 && g_iUserSelectedSkin[id][iWeaponID] < 0)
@@ -2333,7 +2376,7 @@ public task_HUD(id)
 					}
 				}
 				ArrayGetString(g_aRankName, userRank, szRank, charsmax(szRank));
-				set_hudmessage(0, 255, 0, 0.70, 0.21, 0, 6.00, 1.10);
+				set_hudmessage(0, 255, 0, 0.68, 0.21, 0, 6.00, 1.10);
 				ShowSyncHudMsg(id, g_MsgSync, "%L", LANG_SERVER, "CSGOR_HUD_INFO2", g_iUserPoints[id], g_iUserKeys[id], g_iUserCases[id], szRank, szTemp);
 			}
 		}
@@ -2395,15 +2438,15 @@ public _LoadData(id)
 			new Timestamp;
 			if (nvault_lookup(g_Vault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
 			{
-				new szBufferer[64], weaponData[8];
+				new szBuffer[MAX_SKIN_NAME], weaponData[8];
 				new userData[6][32];
 				strtok(g_szData, g_szUser_SavedPass[id], charsmax(g_szUser_SavedPass), g_szData, charsmax(g_szData), '=');
 				strtok(g_szData, g_szUserPrefix[id], charsmax(g_szUserPrefix), g_szData, charsmax(g_szData), ',');
 				strtok(g_szData, g_szUserPrefixColor[id], charsmax(g_szUserPrefixColor), g_szData, charsmax(g_szData), ';');
-				strtok(g_szData, szBufferer, charsmax(szBufferer), g_szData, charsmax(g_szData), '*');
+				strtok(g_szData, szBuffer, charsmax(szBuffer), g_szData, charsmax(g_szData), '*');
 				for (new i; i < sizeof userData; i++)
 				{
-					strtok(szBufferer, userData[i], charsmax(userData), szBufferer, charsmax(szBufferer), ',');
+					strtok(szBuffer, userData[i], charsmax(userData), szBuffer, charsmax(szBuffer), ',');
 				}
 				g_iUserPoints[id] = str_to_num(userData[0]);
 				g_iUserDusts[id] = str_to_num(userData[1]);
@@ -2412,11 +2455,11 @@ public _LoadData(id)
 				g_iUserKills[id] = str_to_num(userData[4]);
 				g_iUserRank[id] = str_to_num(userData[5]);
 
-				static skinszBuffer[MAX_SKINS];
-				skinszBuffer[0] = 0;
+				static skinBuffer[MAX_SKINS];
+				skinBuffer[0] = 0;
 				new temp[4];
-				strtok(g_szData, g_szData, charsmax(g_szData), skinszBuffer, charsmax(skinszBuffer), '#');
-				for (new j = 1; j <= CSW_P90 && skinszBuffer[0] && strtok(skinszBuffer, temp, charsmax(temp), skinszBuffer, charsmax(skinszBuffer), ','); j++)
+				strtok(g_szData, g_szData, charsmax(g_szData), skinBuffer, charsmax(skinBuffer), '#');
+				for (new j = 1; j <= CSW_P90 && skinBuffer[0] && strtok(skinBuffer, temp, charsmax(temp), skinBuffer, charsmax(skinBuffer), ','); j++)
 				{
 					g_iUserSelectedSkin[id][j] = str_to_num(temp);
 				}
@@ -2430,14 +2473,15 @@ public _LoadData(id)
 			if(nvault_lookup(g_sVault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
 			{
 				new weaponData[8];
-				static skinszBuffer[MAX_SKINS * 2 + 94];
-				static killcount[MAX_SKINS * 2], iLine = 0;
-				skinszBuffer[0] = 0;
+				static skinBuffer[MAX_SKINS * 2 + 94];
+				static killcount[MAX_SKINS * 2];
+				new iLine = 0;
+				skinBuffer[0] = 0;
 				killcount[0] = 0;
 				new temp[2][8];
-				strtok(g_szData, g_szData, charsmax(g_szData), skinszBuffer, charsmax(skinszBuffer), '#');
-				strtok(skinszBuffer, skinszBuffer, charsmax(skinszBuffer), killcount, charsmax(killcount), '*');
-				for (new j = 1; j <= CSW_P90 && skinszBuffer[0] && strtok(skinszBuffer, temp[0], charsmax(temp[]), skinszBuffer, charsmax(skinszBuffer), ','); j++)
+				strtok(g_szData, g_szData, charsmax(g_szData), skinBuffer, charsmax(skinBuffer), '#');
+				strtok(skinBuffer, skinBuffer, charsmax(skinBuffer), killcount, charsmax(killcount), '*');
+				for (new j = 1; j <= CSW_P90 && skinBuffer[0] && strtok(skinBuffer, temp[0], charsmax(temp[]), skinBuffer, charsmax(skinBuffer), ','); j++)
 				{
 					g_iStattrackWeap[id][iSelected][j] = str_to_num(temp[0]);
 					g_iStattrackWeap[id][bStattrack][j] = str_to_num(temp[0]) != -1 ? true : false;
@@ -2455,7 +2499,7 @@ public _LoadData(id)
 		}
 		case MYSQL:
 		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = '%s';", g_szName[id]);
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id]);
 			
 			if(!SQL_Execute(iQuery))
 			{
@@ -2471,6 +2515,8 @@ public _LoadData(id)
    			{
    				formatex(szQuery, charsmax(szQuery), "INSERT INTO `csgor_data`\
 	   				(`Name`,\
+	   				`SteamID`,\
+	   				`Last IP`,\
 	   				`Password`,\
 	   				`ChatTag`,\
 	   				`ChatTag Color`,\
@@ -2482,7 +2528,7 @@ public _LoadData(id)
 	   				`Rank`,\
 	   				`Bonus Timestamp`,\
 	   				`Promocode`\
-	   				) VALUES ('%s','%s','%s','%s','0','0','0','0','0','0','0','0');", g_szName[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id]);
+	   				) VALUES (^"%s^", ^"%s^", ^"%s^", ^"%s^",^"%s^",'0','0','0','0','0','0','0','0');", g_szName[id], g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id]);
    			}
    			else
    			{
@@ -2498,7 +2544,7 @@ public _LoadData(id)
    					`Rank`,\
    					`Bonus Timestamp`,\
    					`Promocode`\
-   					FROM `csgor_data` WHERE `Name` = '%s';", g_szName[id]);
+   					FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id]);
    			}
 
    			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery);
@@ -2540,7 +2586,7 @@ public _LoadSkins(id)
 	log_to_file("csgor_debug_logs.log", "_LoadSkins()")
 	#endif
 
-	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_skins` WHERE `Name` = '%s';", g_szName[id]);
+	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_skins` WHERE `Name` = ^"%s^";", g_szName[id]);
 			
 	if(!SQL_Execute(iQuery))
 	{
@@ -2562,7 +2608,7 @@ public _LoadSkins(id)
 		`Stattrack Kills`,\
 		`Selected Stattrack`,\
 		`Selected Skins`\
-		) VALUES ('%s','0','0','0','0','0');", g_szName[id]);
+		) VALUES (^"%s^",'0','0','0','0','0');", g_szName[id]);
 	}
 	else
 	{
@@ -2572,7 +2618,7 @@ public _LoadSkins(id)
 		`Stattrack Kills`,\
 		`Selected Stattrack`,\
 		`Selected Skins`\
-		FROM `csgor_skins` WHERE `Name` = '%s';", g_szName[id]);
+		FROM `csgor_skins` WHERE `Name` = ^"%s^";", g_szName[id]);
 	}
 
 	iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery);
@@ -2629,10 +2675,10 @@ public _LoadSkins(id)
 public _SaveData(id)
 {
 	static g_iWeapszBuffer[MAX_SKINS * 2 + 3];
-	static skinszBuffer[MAX_SKINS * 2];
+	static skinBuffer[MAX_SKINS * 2];
 	static stattszBuffer[MAX_SKINS * 2];
 	g_iWeapszBuffer[0] = 0;
-	skinszBuffer[0] = 0;
+	skinBuffer[0] = 0;
 	stattszBuffer[0] = 0;
 	formatex(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%d", g_iUserSkins[id]);
 
@@ -2641,12 +2687,12 @@ public _SaveData(id)
 		format(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%s,%d", g_iWeapszBuffer, g_iUserSkins[id][i]);
 	}
 
-	formatex(skinszBuffer, charsmax(skinszBuffer), "%d", g_iUserSelectedSkin[id][1]);
+	formatex(skinBuffer, charsmax(skinBuffer), "%d", g_iUserSelectedSkin[id][1]);
 	formatex(stattszBuffer, charsmax(stattszBuffer), "%d", g_iStattrackWeap[id][iSelected][1]);
 
 	for (new i = 2; i <= CSW_P90; i++)
 	{
-		format(skinszBuffer, charsmax(skinszBuffer), "%s,%d", skinszBuffer, g_iUserSelectedSkin[id][i]);
+		format(skinBuffer, charsmax(skinBuffer), "%s,%d", skinBuffer, g_iUserSelectedSkin[id][i]);
 		format(stattszBuffer, charsmax(stattszBuffer), "%s,%d", stattszBuffer, g_iStattrackWeap[id][iSelected][i]);
 	}
 
@@ -2656,10 +2702,10 @@ public _SaveData(id)
 		{
 			static g_szData[MAX_SKINS * 3 + 94];
 			g_szData[0] = 0;
-			new infoszBuffer[64];
-			formatex(infoszBuffer, charsmax(infoszBuffer), "%s=%s,%s;%d,%d,%d,%d,%d,%d", g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id]);
+			new infoBuffer[MAX_SKIN_NAME];
+			formatex(infoBuffer, charsmax(infoBuffer), "%s=%s,%s;%d,%d,%d,%d,%d,%d", g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id]);
 
-			formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoszBuffer, g_iWeapszBuffer, skinszBuffer);
+			formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoBuffer, g_iWeapszBuffer, skinBuffer);
 			nvault_set(g_Vault, g_szName[id], g_szData);
 
 			task_update_stattrack(id, stattszBuffer, .iType = NVAULT);
@@ -2671,9 +2717,11 @@ public _SaveData(id)
 			new iTimestamp;
 			IsTaken(id, iTimestamp);
 			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data`\
-			SET `Password`='%s',\
-			`ChatTag`='%s',\
-			`ChatTag Color`='%s',\
+			SET `SteamID`=^"%s^",\
+			`Last IP`=^"%s^",\
+			`Password`=^"%s^",\
+			`ChatTag`=^"%s^",\
+			`ChatTag Color`=^"%s^",\
 			`Points`='%i',\
 			`Scraps`='%i',\
 			`Keys`='%i',\
@@ -2682,7 +2730,7 @@ public _SaveData(id)
 			`Rank`='%i',\
 			`Bonus Timestamp`='%i',\
 			`Promocode`='%i'\
-			WHERE `Name`='%s';", g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id], iTimestamp, g_iPromoCount[id], g_szName[id]);
+			WHERE `Name`=^"%s^";", g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id], iTimestamp, g_iPromoCount[id], g_szName[id]);
 			
 			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
 
@@ -2694,10 +2742,10 @@ public _SaveData(id)
 			}
 
 			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins`\
-			SET `Skins`='%s',\
-			`Selected Stattrack`='%s',\
-			`Selected Skins`='%s'\
-			WHERE `Name`='%s';", g_iWeapszBuffer, stattszBuffer, skinszBuffer, g_szName[id]);
+			SET `Skins`=^"%s^",\
+			`Selected Stattrack`=^"%s^",\
+			`Selected Skins`=^"%s^"\
+			WHERE `Name`=^"%s^";", g_iWeapszBuffer, stattszBuffer, skinBuffer, g_szName[id]);
 
 			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery);
 
@@ -2748,8 +2796,8 @@ public task_update_stattrack(id, szPassed[MAX_SKINS * 2], iType)
 		case MYSQL:
 		{
 			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins`\
-			SET `Stattrack Skins`='%s'\
-			WHERE `Name`='%s';", g_iStattrack, g_szName[id]);
+			SET `Stattrack Skins`=^"%s^"\
+			WHERE `Name`=^"%s^";", g_iStattrack, g_szName[id]);
 
 			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
 
@@ -2795,8 +2843,8 @@ public task_update_stattrack_kills(id, szPassed[MAX_SKINS * 2 + 94], iType)
 		case MYSQL:
 		{
 			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins`\
-			SET `Stattrack Kills`='%s'\
-			WHERE `Name`='%s';", g_iStattKills, g_szName[id]);
+			SET `Stattrack Kills`=^"%s^"\
+			WHERE `Name`=^"%s^";", g_iStattKills, g_szName[id]);
 
 			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
 
@@ -3127,7 +3175,7 @@ public _ShowPreviewMenu(id)
 	log_to_file("csgor_debug_logs.log", "_ShowPreviewMenu()")
 	#endif
 
-	new szTemp[64];
+	new szTemp[MAX_SKIN_NAME];
 	new weapons[EnumSkinsMenuInfo];
 	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", CSGO_TAG, LANG_SERVER, "CSGOR_PREVIEW_MENU");
 	new menu = menu_create(szTemp, "preview_menu_handler");
@@ -3338,7 +3386,7 @@ public _ShowNormalSkinsMenu(id)
 	log_to_file("csgor_debug_logs.log", "_ShowNormalSkinsMenu()")
 	#endif
 
-	new szTemp[64];
+	new szTemp[128];
 	new weapons[EnumSkinsMenuInfo];
 	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", CSGO_TAG, LANG_SERVER, "CSGOR_SKIN_MENU");
 	new menu = menu_create(szTemp, "skins_normal_menu_handler");
@@ -3385,7 +3433,7 @@ public _ShowStattrackSkinsMenu(id)
 	log_to_file("csgor_debug_logs.log", "_ShowStattrackSkinsMenu()")
 	#endif
 
-	new szTemp[64];
+	new szTemp[128];
 	new weapons[EnumSkinsMenuInfo];
 	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", CSGO_TAG, LANG_SERVER, "CSGOR_SKIN_MENU");
 	new menu = menu_create(szTemp, "skins_stattrack_menu_handler");
@@ -3432,10 +3480,23 @@ public _ShowSortedSkins(id, iItem, iMenu)
 	log_to_file("csgor_debug_logs.log", "_ShowSortedSkins()")
 	#endif
 
-	new temp[82];
+	new szTemp[82], szFormatted[64];
 	new szItem[32], bool:hasSkins, num, skinName[48], skintype[4], iWeaponID, apply, craft;
-	formatex(temp, charsmax(temp), "\r%s \w%L", CSGO_TAG, LANG_SERVER, iMenu == iPreview ? "CSGOR_PREVIEW_MENU" : "CSGOR_SKIN_MENU");
-	new menu = menu_create(temp, "skin_menu_handler");
+
+	switch(iMenu)
+	{
+		case iNormal, iStattrack:
+		{
+			formatex(szFormatted, charsmax(szFormatted), "\w%L", LANG_SERVER, iMenu == iNormal ? "CSGOR_SKIN_MENU" : "CSGOR_SKIN_STT_MENU");
+		}
+		case iPreview:
+		{
+			formatex(szFormatted, charsmax(szFormatted), "\w%L", LANG_SERVER, "CSGOR_PREVIEW_MENU");
+		}
+	}
+
+	formatex(szTemp, charsmax(szTemp), "\r%s \w%s", CSGO_TAG, szFormatted);
+	new menu = menu_create(szTemp, "skin_menu_handler");
 	switch(iMenu)
 	{
 		case iPreview:
@@ -3455,10 +3516,10 @@ public _ShowSortedSkins(id, iItem, iMenu)
 					{
 						craft = 1;
 					}
-					formatex(temp, charsmax(temp), "%s%s\w", craft ? "\r" : "\w", skinName);
+					formatex(szTemp, charsmax(szTemp), "%s%s\w", craft ? "\r" : "\w", skinName);
 					num_to_str(i, szItem, charsmax(szItem));
 					format(szItem, charsmax(szItem), "%s,%i", szItem, iMenu);
-					menu_additem(menu, temp, szItem);
+					menu_additem(menu, szTemp, szItem);
 					hasSkins = true;
 				}
 			}
@@ -3491,10 +3552,10 @@ public _ShowSortedSkins(id, iItem, iMenu)
 						{
 							apply = 0;
 						}
-						formatex(temp, charsmax(temp), "%s%s\w| \y%L \r%s", iMenu == iNormal ? (craft ? "\r" : "\w") : "\r(StatTrack)\w ", skinName, LANG_SERVER, "CSGOR_SM_PIECES", num, apply ? "#" : "");
+						formatex(szTemp, charsmax(szTemp), "%s%s\w| \y%L \r%s", iMenu == iNormal ? (craft ? "\r" : "\w") : "\w", skinName, LANG_SERVER, "CSGOR_SM_PIECES", num, apply ? "#" : "");
 						num_to_str(i, szItem, charsmax(szItem));
 						format(szItem, charsmax(szItem), "%s,%i", szItem, iMenu);
-						menu_additem(menu, temp, szItem);
+						menu_additem(menu, szTemp, szItem);
 						hasSkins = true;
 					}
 				}
@@ -3504,10 +3565,10 @@ public _ShowSortedSkins(id, iItem, iMenu)
 	
 	if (!hasSkins)
 	{
-		formatex(temp, charsmax(temp), "\r%L", LANG_SERVER, "CSGOR_SM_NO_SKINS");
+		formatex(szTemp, charsmax(szTemp), "\r%L", LANG_SERVER, "CSGOR_SM_NO_SKINS");
 		num_to_str(-10, szItem, charsmax(szItem));
 		format(szItem, charsmax(szItem), "%s,%i", szItem, iMenu);
-		menu_additem(menu, temp, szItem);
+		menu_additem(menu, szTemp, szItem);
 	}
 	_DisplayMenu(id, menu);
 }
@@ -3752,16 +3813,21 @@ public tags_menu_handler(id, menu, item)
 		}
 		case 3:
 		{
-			if ( g_iCvars[iChatTagPrice] <= g_iUserPoints[id] )
+			if(g_szTemporaryCtag[id][0] != EOS)
 			{
-				copy(g_szUserPrefix[id], 15, g_szTemporaryCtag[id]);
-				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_CTAG_CHANGED_SUCCES", g_szUserPrefix[id]);
-				g_iUserPoints[id] -= g_iCvars[iChatTagPrice];
+				if ( g_iCvars[iChatTagPrice] <= g_iUserPoints[id] )
+				{
+					copy(g_szUserPrefix[id], 15, g_szTemporaryCtag[id]);
+					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_CTAG_CHANGED_SUCCES", g_szUserPrefix[id]);
+					g_iUserPoints[id] -= g_iCvars[iChatTagPrice];
+					g_szTemporaryCtag[id] = "";
+				}
+				else
+				{
+					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_CTAG_CHANGE_FAIL", (g_iCvars[iChatTagPrice] - g_iUserPoints[id]));
+				}
 			}
-			else
-			{
-				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_CTAG_CHANGE_FAIL", (g_iCvars[iChatTagPrice] - g_iUserPoints[id]));
-			}
+			_ShowTagsMenu(id);
 		}
 	}
 	return _MenuExit(menu);
@@ -3776,7 +3842,7 @@ public concmd_chattag(id)
 	new data[32];
 	read_args(data, charsmax(data));
 	remove_quotes(data);
-	if ( strlen(data) < 3 || strlen(data) > 12)
+	if ( strlen(data) < 3 || strlen(data) > 12 || containi(data, "%") != -1)
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INSERT_CTAG", 3, 12);
 		client_cmd(id, "messagemode ChatTag");
@@ -3945,24 +4011,6 @@ public grenade_throw(id, ent, csw)
 	ClearPlayerBit(g_bitShortThrow, id);
 }
 
-public FM_Hook_UpdateClientData_Post(id, SendWeapons, CD_Handle)
-{
-	new iWeapon = get_user_weapon(id)
-	switch(iWeapon)
-	{
-		case CSW_HEGRENADE, CSW_SMOKEGRENADE, CSW_FLASHBANG, CSW_C4:
-		{
-			return FMRES_IGNORED
-		}
-		default:
-		{
-			set_cd(CD_Handle, CD_flNextAttack, get_gametime() + 0.001)
-		}
-	}
-
-	return FMRES_HANDLED
-}
-
 public Ham_Item_Deploy_Post(ent)
 {
 	#if defined DEBUG
@@ -4062,7 +4110,7 @@ public Ham_Weapon_Secondary_Pre(ent)
 	skin = (g_iStattrackWeap[id][bStattrack][weaponid] ? g_iStattrackWeap[id][iSelected][weaponid] : g_iUserSelectedSkin[id][weaponid]);
 
 	if (skin > -1) {
-		new skinName[64];
+		new skinName[MAX_SKIN_NAME];
 
 		ArrayGetString(g_aSkinName, skin, skinName, charsmax(skinName));
 
@@ -4107,7 +4155,7 @@ public FM_Hook_PlayBackEvent_Primary_Pre(flags, id, eventid, Float:delay, Float:
 	log_to_file("csgor_debug_logs.log", "FM_Hook_PlayBackEvent_Primary_Pre()")
 	#endif
 
-	if(!is_user_connected(id))
+	if(!is_user_connected(id) || pev_valid(id) != PDATA_SAFE || !GetPlayerBit(g_bitIsConnected, id) || !IsPlayer(id))
 	{
 		return FMRES_IGNORED
 	}
@@ -4620,7 +4668,7 @@ public _CraftStattrackSkin(id)
 	} while (run);
 	if (succes)
 	{
-		new Skin[48], szTemp[64];
+		new Skin[MAX_SKIN_NAME], szTemp[MAX_SKIN_NAME];
 		ArrayGetString(g_aSkinName, skinID, Skin, charsmax(Skin));
 		FormatStattrack(Skin, charsmax(Skin), szTemp);
 		g_iStattrackWeap[id][iWeap][skinID]++;
@@ -5121,7 +5169,7 @@ public _ShowDustbinMenu(id)
 	log_to_file("csgor_debug_logs.log", "_ShowDustbinMenu()")
 	#endif
 
-	new temp[64];
+	new temp[MAX_SKIN_NAME];
 	formatex(temp, charsmax(temp), "\r%s \w%L", CSGO_TAG, LANG_SERVER, "CSGOR_DB_MENU");
 	new menu = menu_create(temp, "dustbin_menu_handler");
 	new szItem[2];
@@ -5165,7 +5213,7 @@ public _ShowSkins(id)
 	log_to_file("csgor_debug_logs.log", "_ShowSkins()")
 	#endif
 
-	new temp[64];
+	new temp[MAX_SKIN_NAME];
 	formatex(temp, charsmax(temp), "\r%s \w%L", CSGO_TAG, LANG_SERVER, "CSGOR_SKINS");
 	new menu = menu_create(temp, "db_skins_menu_handler");
 	new szItem[32];
@@ -5180,7 +5228,7 @@ public _ShowSkins(id)
 		{
 			ArrayGetString(g_aSkinName, i, szSkin, charsmax(szSkin));
 			ArrayGetString(g_aSkinType, i, type, 1);
-			new applied[64];
+			new applied[3];
 			switch (type[0])
 			{
 				case 'c':
@@ -5650,7 +5698,7 @@ public hook_say(id)
 	log_to_file("csgor_debug_logs.log", "hook_say()")
 	#endif
 
-	if(!GetPlayerBit(g_bitIsConnected, id))
+	if(!GetPlayerBit(g_bitIsConnected, id) || !g_iCvars[iCustomChat])
 		return
 
 	new szMessage[128]
@@ -5665,7 +5713,7 @@ public hook_sayteam(id)
 	log_to_file("csgor_debug_logs.log", "hook_sayteam()")
 	#endif
 
-	if(!GetPlayerBit(g_bitIsConnected, id))
+	if(!GetPlayerBit(g_bitIsConnected, id) || !g_iCvars[iCustomChat])
 		return
 
 	new szMessage[128]
@@ -5680,6 +5728,7 @@ ProcessChat(id, szMessage[128], bool:bAllChat)
 	log_to_file("csgor_debug_logs.log", "ProcessChat()")
 	#endif
 
+	/* Fixing % chat exploits */
 	if(containi(szMessage, "%") != -1)
 	{
 		replace_all(szMessage, charsmax(szMessage), "%", "")		
@@ -5688,6 +5737,26 @@ ProcessChat(id, szMessage[128], bool:bAllChat)
 
 	if(!strlen(szMessage))
 		return
+
+	new iSize = ArraySize(g_aSkipChat);
+
+	if(iSize)
+	{
+		new szChatSkip[20], bool:bFound = false
+		for(new i; i < iSize; i++)
+		{
+			ArrayGetString(g_aSkipChat, i, szChatSkip, charsmax(szChatSkip));
+
+			if(equali(szMessage, szChatSkip, strlen(szChatSkip)))
+			{
+				bFound = true;
+				break;
+			}
+		}
+
+		if(bFound)
+			return;
+	}
 
 	new iChat;
 	new CsTeams:iTeams = cs_get_user_team(id)
@@ -5812,6 +5881,8 @@ ProcessChat(id, szMessage[128], bool:bAllChat)
 		write_string(szMessage);
 		message_end();
 	}
+
+	return
 }
 
 public Message_SayText(msgId, msgDest, msgEnt)
@@ -5822,147 +5893,6 @@ public Message_SayText(msgId, msgDest, msgEnt)
 
 	return PLUGIN_HANDLED
 }
-
-/*public Message_SayText(msgId, msgDest, msgEnt)
-{
-	new id = get_msg_arg_int(1);
-	new bool:bTeamChat;
-	if (id)
-	{
-		new szChannel[25];
-		new szMessage[198];
-		new szSaid[128];
-		new iChat;
-		get_msg_arg_string(2, szChannel, charsmax(szChannel));
-		get_msg_arg_string(4, szSaid, charsmax(szSaid));
-		if(containi(szChannel, "#Cstrike_Chat") != -1)
-		{
-			if(szChannel[15] == 'A')
-			{
-				switch(szChannel[17])
-				{
-					case 'D', 'd':
-					{
-						iChat = DeadChat
-					}
-					case 'S', 's':
-					{
-						iChat = SpecChat
-					}
-					default: 
-					{
-						iChat = AllChat
-					}
-				}
-			}
-			else
-			{
-				bTeamChat = true
-				switch(szChannel[14])
-				{
-					case 'C', 'c':
-					{
-						iChat = CTChat
-					}
-					case 'T', 't':
-					{
-						iChat = TeroChat
-					}
-					case 'S', 's':
-					{
-						iChat = SpecChat
-					}
-				}
-			}
-		}
-		
-		if(g_bLogged[id])
-		{
-			new szRank[32];
-			ArrayGetString(g_aRankName, g_iUserRank[id], szRank, charsmax(szRank));
-			new len = strlen(g_szUserPrefix[id]);
-			new tag[20];
-			if(len > 3)
-			{
-				formatex(tag, charsmax(tag), "[%s]", g_szUserPrefix[id]);
-			}
-			else
-			{
-				copy(tag, charsmax(tag), g_szUserPrefix[id]);
-			}
-			switch (iChat)
-			{
-				case AllChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^4[%s] ^1%s%s ^3%n ^1: %s", szRank, (len > 0) ? g_szUserPrefixColor[id] : "^1", tag, id, szSaid);
-				}
-				case DeadChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^1*DEAD* ^4[%s] ^1%s%s ^3%n ^1: %s", szRank, (len > 0) ? g_szUserPrefixColor[id] : "^1", tag, id, szSaid);
-				}
-				case SpecChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^1*SPEC* ^4[%s] ^1%s%s ^3%n ^1: %s", szRank, (len > 0) ? g_szUserPrefixColor[id] : "^1", tag, id, szSaid);
-				}
-				case CTChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^1*CT* ^4[%s] ^1%s%s ^3%n ^1: %s", szRank, (len > 0) ? g_szUserPrefixColor[id] : "^1", tag, id, szSaid);
-				}
-				case TeroChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^1*Terrorist* ^4[%s] ^1%s%s ^3%n ^1: %s", szRank, (len > 0) ? g_szUserPrefixColor[id] : "^1", tag, id, szSaid);
-				}
-			}
-		}
-		else
-		{
-			switch (iChat)
-			{
-				case AllChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^4[%L] ^3%n ^1: %s", LANG_SERVER, "CSGOR_NOT_LOGGED_CHAT", id, szSaid);
-				}
-				case DeadChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^1*DEAD* ^4[%L] ^3%n ^1: %s", LANG_SERVER, "CSGOR_NOT_LOGGED_CHAT", id, szSaid);
-				}
-				case SpecChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^1*SPEC* ^4[%L] ^3%n ^1: %s", LANG_SERVER, "CSGOR_NOT_LOGGED_CHAT", id, szSaid);
-				}
-				case CTChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^1*CT* ^4[%L] ^3%n ^1: %s", LANG_SERVER, "CSGOR_NOT_LOGGED_CHAT", id, szSaid);
-				}
-				case TeroChat:
-				{
-					formatex(szMessage, charsmax(szMessage), "^1*Terrorist* ^4[%L] ^3%n ^1: %s", LANG_SERVER, "CSGOR_NOT_LOGGED_CHAT", id, szSaid);
-				}
-			}
-		}
-
-		new iPlayer, iPlayers[MAX_PLAYERS], iNum
-		get_players(iPlayers, iNum, "c")
-
-		for(new i; i < iNum; i++)
-		{
-			server_print("here")
-			iPlayer = iPlayers[i];
-
-			if(bTeamChat && !(get_user_team(id) == get_user_team(iPlayer)))
-				continue
-
-			server_print("id: %n iPlayer: %n, iNum: %d/%d", id, iPlayer, iNum, i)
-
-			message_begin(MSG_ONE_UNRELIABLE, get_user_msgid("SayText"), .player = iPlayer);
-			write_byte(id);
-			write_string(szMessage);
-			message_end();
-		}
-	}
-
-	return PLUGIN_HANDLED_MAIN;
-}*/
 
 public _ShowTradeMenu(id)
 {
@@ -6256,7 +6186,7 @@ public _SelectTradeItem(id)
 		{
 			ArrayGetString(g_aSkinName, i, szSkin, charsmax(szSkin));
 			ArrayGetString(g_aSkinType, i, type, 1);
-			new applied[64];
+			new applied[3];
 			switch (type[0])
 			{
 				case 99:
@@ -7989,7 +7919,7 @@ public concmd_givepoints(id, level, cid)
 
 	if (!cmd_access(id, level, cid, 3))
 	{
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new arg1[32];
 	new arg2[16];
@@ -7999,18 +7929,18 @@ public concmd_givepoints(id, level, cid)
 	if (arg1[0] == '@')
 	{
 		_GiveToAll(id, arg1, arg2, 0);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF);
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 
 	new amount = str_to_num(arg2);
@@ -8034,6 +7964,8 @@ public concmd_givepoints(id, level, cid)
 		}
 	}
 	_Save(target);
+
+	return PLUGIN_HANDLED;
 }
 
 public concmd_givecases(id, level, cid)
@@ -8044,7 +7976,7 @@ public concmd_givecases(id, level, cid)
 
 	if (!cmd_access(id, level, cid, 3))
 	{
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new arg1[32];
 	new arg2[16];
@@ -8054,18 +7986,18 @@ public concmd_givecases(id, level, cid)
 	if (arg1[0] == '@')
 	{
 		_GiveToAll(id, arg1, arg2, 1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF);
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new amount = str_to_num(arg2);
 	if (0 > amount)
@@ -8088,6 +8020,8 @@ public concmd_givecases(id, level, cid)
 		}
 	}
 	_Save(target);
+
+	return PLUGIN_HANDLED;
 }
 
 public concmd_givekeys(id, level, cid)
@@ -8098,28 +8032,28 @@ public concmd_givekeys(id, level, cid)
 
 	if (!cmd_access(id, level, cid, 3, false))
 	{
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new arg1[32];
 	new arg2[16];
 	read_argv(1, arg1, charsmax(arg1));
 	read_argv(2, arg2, charsmax(arg2));
 	new target;
-	if (arg1[0] == 64)
+	if (arg1[0] == '@')
 	{
 		_GiveToAll(id, arg1, arg2, 2);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF);
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new amount = str_to_num(arg2);
 	if (0 > amount)
@@ -8142,6 +8076,8 @@ public concmd_givekeys(id, level, cid)
 		}
 	}
 	_Save(target);
+
+	return PLUGIN_HANDLED;
 }
 
 public concmd_givedusts(id, level, cid)
@@ -8152,28 +8088,28 @@ public concmd_givedusts(id, level, cid)
 
 	if (!cmd_access(id, level, cid, 3, false))
 	{
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new arg1[32];
 	new arg2[16];
 	read_argv(1, arg1, charsmax(arg1));
 	read_argv(2, arg2, charsmax(arg2));
 	new target;
-	if (arg1[0] == 64)
+	if (arg1[0] == '@')
 	{
 		_GiveToAll(id, arg1, arg2, 3);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF);
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1);
-		return;
+		return PLUGIN_HANDLED;  
 	}
 	new amount = str_to_num(arg2);
 	if (0 > amount)
@@ -8196,6 +8132,8 @@ public concmd_givedusts(id, level, cid)
 		}
 	}
 	_Save(target);
+
+	return PLUGIN_HANDLED;
 }
 
 public concmd_setrank(id, level, cid)
@@ -8206,7 +8144,7 @@ public concmd_setrank(id, level, cid)
 
 	if (!cmd_access(id, level, cid, 3, false))
 	{
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new arg1[32];
 	new arg2[8];
@@ -8216,18 +8154,18 @@ public concmd_setrank(id, level, cid)
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new rank = str_to_num(arg2);
 	if (rank < 0 || rank >= g_iRanksNum)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_RANKID", g_iRanksNum - 1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	g_iUserRank[target] = rank;
 	if (rank)
@@ -8243,6 +8181,8 @@ public concmd_setrank(id, level, cid)
 	ArrayGetString(g_aRankName, g_iUserRank[target], szRank, charsmax(szRank));
 	console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_SET_RANK", arg1, szRank);
 	client_print_color(target, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SET_RANK", g_szName[id], szRank);
+
+	return PLUGIN_HANDLED;
 }
 
 public concmd_giveskins(id, level, cid)
@@ -8253,7 +8193,7 @@ public concmd_giveskins(id, level, cid)
 
 	if (!cmd_access(id, level, cid, 4, false))
 	{
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new arg1[32];
 	new arg2[8];
@@ -8265,18 +8205,18 @@ public concmd_giveskins(id, level, cid)
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	new skin = str_to_num(arg2);
 	if (skin < 0 || skin >= g_iSkinsNum)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SKINID", g_iSkinsNum - 1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 
 	new amount = str_to_num(arg3);
@@ -8302,6 +8242,8 @@ public concmd_giveskins(id, level, cid)
 		}
 	}
 	_Save(target);
+
+	return PLUGIN_HANDLED;
 }
 
 public concmd_give_all_skins(id, level, cid)
@@ -8312,7 +8254,7 @@ public concmd_give_all_skins(id, level, cid)
 
 	if (!cmd_access(id, level, cid, 2, false))
 	{
-		return;
+		return PLUGIN_HANDLED;
 	}
 	
 	new arg1[32];
@@ -8321,12 +8263,12 @@ public concmd_give_all_skins(id, level, cid)
 	if(!target) 
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1);
-		return;
+		return PLUGIN_HANDLED;
 	}
 
 	for (new i; i < g_iSkinsNum; i++)
@@ -8338,6 +8280,8 @@ public concmd_give_all_skins(id, level, cid)
 	console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_GAVE_ALL_SKINS_TO", g_szName[target]);
 	client_print_color(target, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ALL_SKINS", g_szName[id]);
 	_Save(target);
+
+	return PLUGIN_HANDLED;
 }
 
 public native_get_user_points(iPluginID, iParamNum)
@@ -9081,9 +9025,9 @@ public native_get_user_stattrack(iPluginID, iParamNum)
 	log_to_file("csgor_debug_logs.log", "native_get_user_stattrack()")
 	#endif
 
-	if (iParamNum != 3)
+	if (iParamNum != 4)
 	{
-		log_error(AMX_ERR_NATIVE, "%s Invalid param num ! Valid: (PlayerID, SkinName, iLen)", CSGO_TAG);
+		log_error(AMX_ERR_NATIVE, "%s Invalid param num ! Valid: (PlayerID, WeaponID, SkinName, iLen)", CSGO_TAG);
 		return -1;
 	}
 
@@ -9100,18 +9044,25 @@ public native_get_user_stattrack(iPluginID, iParamNum)
 		return -1;
 	}
 
-	new iWeaponID = get_user_weapon(id);
-	if(!g_iStattrackWeap[id][bStattrack][iWeaponID])
+	new iWeaponID = get_param(2);
+
+	if( iWeaponID <= CSW_NONE || iWeaponID > CSW_P90 )
 	{
-		log_error(AMX_ERR_NATIVE, "%s Player's (%d) skin is not StatTrack", CSGO_TAG, id);
+		log_error(AMX_ERR_NATIVE, "%s Weapon ID (%d) is not a valid one!", CSGO_TAG, iWeaponID);
 		return -1;
 	}
 
-	new skin[48];
-	ArrayGetString(g_aSkinName, g_iStattrackWeap[id][iSelected][iWeaponID], skin, charsmax(skin));
-	formatex(skin, charsmax(skin), "StatTrack %s", skin);
+	if(!g_iStattrackWeap[id][bStattrack][iWeaponID])
+	{
+		set_string(3, "NONE", get_param(4));
+		return -1;
+	}
 
-	set_string(2, skin, get_param(3));
+	new szSkin[48];
+	ArrayGetString(g_aSkinName, g_iStattrackWeap[id][iSelected][iWeaponID], szSkin, charsmax(szSkin));
+	format(szSkin, charsmax(szSkin), "StatTrack %s", szSkin);
+
+	set_string(3, szSkin, get_param(4));
 	return PLUGIN_HANDLED;
 }
 
@@ -9131,6 +9082,68 @@ public native_csgo_get_config_location(iPluginID, iParamNum)
 	#endif
 
 	set_string(1, g_szConfigFile, charsmax(g_szConfigFile));
+}
+
+public native_csgo_get_user_skin(iPLuginID, iParamNum)
+{
+	#if defined DEBUG
+	log_to_file("csgor_debug_logs.log", "native_csgo_get_user_skin()")
+	#endif
+
+	if (iParamNum != 4)
+	{
+		log_error(AMX_ERR_NATIVE, "%s Invalid param num ! Valid: (PlayerID, iWeaponID, SkinName, iLen)", CSGO_TAG);
+		return -1;
+	}
+
+	new id = get_param(1);
+	if(!is_user_connected(id))
+	{
+		log_error(AMX_ERR_NATIVE, "%s Player is not connected (%d)", CSGO_TAG, id);
+		return -1;
+	}
+
+	if(!g_bLogged[id])
+	{
+		log_error(AMX_ERR_NATIVE, "%s Player is not logged into account (%d)", CSGO_TAG, id);
+		return -1;
+	}
+
+	new iWeaponID = get_param(2);
+
+	if( iWeaponID <= CSW_NONE || iWeaponID > CSW_P90 )
+	{
+		log_error(AMX_ERR_NATIVE, "%s Weapon ID (%d) is not a valid one!", CSGO_TAG, iWeaponID);
+		return -1;
+	}
+
+	if(g_iUserSelectedSkin[id][iWeaponID] < 0)
+	{
+		set_string(3, "NONE", get_param(4));
+		return -1;
+	}
+
+	new szSkin[MAX_SKIN_NAME];
+	ArrayGetString(g_aSkinName, g_iUserSelectedSkin[id][iWeaponID], szSkin, charsmax(szSkin));
+
+	set_string(3, szSkin, get_param(4));
+	return PLUGIN_HANDLED;
+}
+
+public native_csgo_get_database_data(iPluginID, iParamNum)
+{
+	if (iParamNum != 8)
+	{
+		log_error(AMX_ERR_NATIVE, "%s Invalid param num ! Valid: (szHostname[], iHostLen, szUsername[], iUserLen, szPassword[], iPassLen, szDatabase[], iDbLen)", CSGO_TAG);
+		return -1;
+	}
+
+	set_string(1, g_iCvars[szSqlHost], get_param(2))
+	set_string(3, g_iCvars[szSqlUsername], get_param(4))
+	set_string(5, g_iCvars[szSqlPassword], get_param(6))
+	set_string(7, g_iCvars[szSqlDatabase], get_param(8))
+
+	return 1;
 }
 
 public concmd_finddata(id, level, cid)
@@ -9168,14 +9181,14 @@ public concmd_finddata(id, level, cid)
 			if (nvault_lookup(g_Vault, arg1, Data, charsmax(Data), Timestamp))
 			{
 				new pData[6][16]
-				new szBufferer[48];
+				new szBuffer[48];
 				strtok(Data, password, charsmax(password), Data, charsmax(Data), '=');
-				strtok(Data, szBufferer, charsmax(szBufferer), Data, charsmax(Data), '*');
-				replace_all(szBufferer, charsmax(szBufferer), ",;", "")
+				strtok(Data, szBuffer, charsmax(szBuffer), Data, charsmax(Data), '*');
+				replace_all(szBuffer, charsmax(szBuffer), ",;", "")
 
 				for (new i; i < sizeof pData; i++)
 				{
-					strtok(szBufferer, pData[i], charsmax(pData[]), szBufferer, charsmax(szBufferer), ',');
+					strtok(szBuffer, pData[i], charsmax(pData[]), szBuffer, charsmax(szBuffer), ',');
 					userData[i] = str_to_num(pData[i])
 				}
 
@@ -9184,7 +9197,7 @@ public concmd_finddata(id, level, cid)
 		}
 		case MYSQL:
 		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = '%s';", arg1);
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", arg1);
 			
 			if(!SQL_Execute(iQuery))
 			{
@@ -9204,7 +9217,7 @@ public concmd_finddata(id, level, cid)
    					`Cases`,\
    					`Kills`,\
    					`Rank`\
-   					FROM `csgor_data` WHERE `Name` = '%s';", g_szName[id]);
+   					FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id]);
 
 	   			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery);
 
@@ -9288,22 +9301,22 @@ public concmd_resetdata(id, level, cid)
 			console_print(id, "%s The account has been removed: %s", CSGO_TAG, arg1);
 			return PLUGIN_HANDLED;
 		}
-		new infoszBuffer[64];
-		new skinszBuffer[MAX_SKINS];
+		new infoBuffer[MAX_SKIN_NAME];
+		new skinBuffer[MAX_SKINS];
 		new password[16];
 		strtok(g_szData, password, charsmax(password), g_szData, charsmax(g_szData), '=', 0);
-		formatex(infoszBuffer, charsmax(infoszBuffer), "%s=,;%d,%d,%d,%d,%d,%d", password, 0, 0, 0, 0, 0, 0);
+		formatex(infoBuffer, charsmax(infoBuffer), "%s=,;%d,%d,%d,%d,%d,%d", password, 0, 0, 0, 0, 0, 0);
 		formatex(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%d", 0);
 		for (new i = 1; i < MAX_SKINS; i++)
 		{
 			format(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%s,0", g_iWeapszBuffer);
 		}
-		formatex(skinszBuffer, charsmax(skinszBuffer), "%d", 0);
+		formatex(skinBuffer, charsmax(skinBuffer), "%d", 0);
 		for (new i = 2; i <= 30; i++)
 		{
-			format(skinszBuffer, charsmax(skinszBuffer), "%s,0", skinszBuffer);
+			format(skinBuffer, charsmax(skinBuffer), "%s,0", skinBuffer);
 		}
-		formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoszBuffer, g_iWeapszBuffer, skinszBuffer);
+		formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoBuffer, g_iWeapszBuffer, skinBuffer);
 		nvault_set(g_Vault, arg1, g_szData);
 		console_print(id, "%s The account has been reseted: %s", CSGO_TAG, arg1);
 		ResetData(id, true);
@@ -9463,7 +9476,7 @@ public concmd_skin_index(id, level, cid)
 	{
 		return PLUGIN_HANDLED;
 	}	
-	new arg[48], iIndex, temp[64];
+	new arg[48], iIndex, temp[MAX_SKIN_NAME];
 
 	read_argv(1, arg, charsmax(arg));
 	remove_quotes(arg);
@@ -9778,7 +9791,7 @@ public WeaponShootInfo2(iPlayer, iEnt, iAnim, const szSoundEmpty[], const szSoun
 	log_to_file("csgor_debug_logs.log", "WeaponShootInfo2()")
 	#endif
 
-	if(!is_user_connected(iPlayer) || !pev_valid(iPlayer))
+	if(!is_user_connected(iPlayer) || pev_valid(iPlayer) != PDATA_SAFE || !IsPlayer(iPlayer))
 		return FMRES_IGNORED;
 
 	static iWeaponID, iClip;
@@ -9832,7 +9845,6 @@ public WeaponShootInfo2(iPlayer, iEnt, iAnim, const szSoundEmpty[], const szSoun
 
 	if(!(get_pdata_int(iWeaponID, OFFSET_WEAPONSTATE, XO_WEAPON)))
 		PlayWeaponState(iPlayer, szSoundFire, iAnim);
-
 
 	return FMRES_SUPERCEDE;
 }
@@ -10236,7 +10248,7 @@ bool:IsRegistered(id)
 		}
 		case MYSQL:
 		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = '%s';", g_szName[id]);
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id]);
 			
 			if(!SQL_Execute(iQuery))
 			{
@@ -10386,7 +10398,7 @@ IsTaken(id, iTimestamp)
 		}
 		case MYSQL:
 		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = '%s';", g_szName[id]);
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id]);
 			
 			if(!SQL_Execute(iQuery))
 			{
@@ -10816,7 +10828,7 @@ SendWeaponAnim(iPlayer, iAnim = 0)
 	log_to_file("csgor_debug_logs.log", "SendWeaponAnim()")
 	#endif
 
-	if(!is_user_connected(iPlayer) || !GetPlayerBit(g_bitIsConnected, iPlayer) || !pev_valid(iPlayer))
+	if(!is_user_connected(iPlayer) || !GetPlayerBit(g_bitIsConnected, iPlayer) || pev_valid(iPlayer) != PDATA_SAFE || !IsPlayer(iPlayer))
 	{
 		return
 	}
@@ -10961,7 +10973,7 @@ DestroyTask(iTaskID)
 {
 	if(task_exists(iTaskID))
 	{
-		remove_task(iTaskID)
+		remove_task(iTaskID);
 	}
 }
 
@@ -10971,11 +10983,11 @@ UnixTimeToString(const TimeUnix)
 	log_to_file("csgor_debug_logs.log", "UnixTimeToString()")
 	#endif
 
-    new szBufferer[64];
-    szBufferer[0] = EOS;
+    new szBuffer[64];
+    szBuffer[0] = EOS;
     
     if(!TimeUnix) {
-        return szBufferer;
+        return szBuffer;
     }
     
     new iYear;
@@ -10986,9 +10998,9 @@ UnixTimeToString(const TimeUnix)
     new iSecond;
     
     UnixToTime(TimeUnix, iYear, iMonth, iDay, iHour, iMinute, iSecond, UT_TIMEZONE_SERVER);    
-    formatex(szBufferer, charsmax(szBufferer), "%02d:%02d:%02d", iHour, iMinute, iSecond);
+    formatex(szBuffer, charsmax(szBuffer), "%02d:%02d:%02d", iHour, iMinute, iSecond);
     
-    return szBufferer;
+    return szBuffer;
 }
 
 FormatStattrack(szName[], iLen, szTemp[])

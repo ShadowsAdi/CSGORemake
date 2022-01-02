@@ -9,6 +9,8 @@
     #pragma loadlib csgo_remake
 #endif
 
+#define MAX_SKIN_NAME 64
+
 enum _:FileSections
 {
     secRanks = 1,
@@ -16,7 +18,8 @@ enum _:FileSections
     secSkins,
     secPromocodes,
     secSortedMenu,
-    secDynamicMenu
+    secDynamicMenu,
+    secSkipChat
 }
 
 /**
@@ -292,16 +295,30 @@ native csgor_get_user_statt_kills(id);
 native csgor_set_user_statt_kills(id, amount);
 
 /**
- * Copies player's StatTrack skin name from his viewmodel.
+ * Stores player's applied StatTrack skin name into a string.
  * 
  * @param id            Player index.
- * @param skinname      Buffer to copy name of the StatTrack Weapon in his viewmodel.
+ * @param WeaponID      Weapon index.
+ * @param skinname      Buffer to copy name of the StatTrack skin name.
  * @param len           Buffer lenght.
  *
- * @return              -1 on error.
+ * @return              -1 if player is not within range, if player is not logged into his account or WeaponID is not within range.
  *
  */
-native csgor_get_user_stattrack(id, skinname[], len);
+native csgor_get_user_stattrack(id, WeaponID, skinname[], len);
+
+/**
+ * Stores player's applied skin name into a string.
+ * 
+ * @param id            Player index.
+ * @param WeaponID      Weapon index.
+ * @param skinname      Buffer to copy skin name.
+ * @param len           Buffer lenght.
+ *
+ * @return              -1 if player is not within range, if player is not logged into his account or WeaponID is not within range.
+ *
+ */
+native csgo_get_user_skin(id, WeaponID, skinname[], len);
 
 /**
  * Sets a random StatTrack skin by given amount.
@@ -325,11 +342,28 @@ native csgor_set_random_stattrack(id, amount);
 native csgo_get_config_location(szLocation[64]);
 
 /**
+ * Stores database connection information into strings.
+ * 
+ * @param szHostname    String to retrieve Sql Hostname information.
+ * @param iHostLen      Buffer lenght for szHostname parameter.
+ * 
+ * @param szUsername    String to retrieve Sql Username information.
+ * @param iUserLen      Buffer lenght for szUsername parameter.
+ * 
+ * @param szPassword    String to retrieve Sql Password information.
+ * @param iPassLen      Buffer lenght for szPassword parameter.
+ * 
+ * @param szDatabase    String to retrieve Sql Database information.
+ * @param iDbLen        Buffer lenght for szDatabase parameter.
+ * 
+ * @return              -1 if invalid parameters num is passed, 1 on success.
+ */
+native csgo_get_database_data(szHostname[], iHostLen, szUsername[], iUserLen, szPassword[], iPassLen, szDatabase[], iDbLen)
+
+/**
  * Called when a player log in account.
  *
  * @param id            Player index.
- *
- * @return              True if it is, false otherwise.
  * 
  * @noreturn
  */
