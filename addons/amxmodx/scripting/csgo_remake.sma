@@ -2243,10 +2243,15 @@ public CS_OnBuy(id, item)
 	log_to_file("csgor_debug_logs.log", "CS_OnBuy()")
 	#endif
 
+	if(item == CSI_SHIELD)
+		return PLUGIN_HANDLED;
+
 	if ((1<<item) & NO_REFILL_WEAPONS || (1<<item) & MISC_ITEMS)
-		return;
+		return PLUGIN_CONTINUE;
 
 	ExecuteHamB(Ham_GiveAmmo, id, g_iMaxBpAmmo[item], g_szAmmoType[item], g_iMaxBpAmmo[item]);
+
+	return PLUGIN_CONTINUE;
 }
 
 #if defined HUD_POS
