@@ -2528,7 +2528,7 @@ public _LoadData(id)
 	   				`Rank`,\
 	   				`Bonus Timestamp`,\
 	   				`Promocode`\
-	   				) VALUES (^"%s^", ^"%s^", ^"%s^", ^"%s^",^"%s^",'0','0','0','0','0','0','0','0');", g_szName[id], g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id]);
+	   				) VALUES (^"%s^", ^"%s^", ^"%s^", ^"%s^",^"%s^",'0','0','0','0','0','0','0','0','0');", g_szName[id], g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id]);
    			}
    			else
    			{
