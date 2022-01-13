@@ -499,7 +499,6 @@ new g_iRedPoints[ MAX_PLAYERS + 1 ];
 new g_iWhitePoints[ MAX_PLAYERS + 1 ];
 new g_iYellowPoints[ MAX_PLAYERS + 1 ];
 new g_eEnumBooleans[MAX_PLAYERS + 1][EnumBooleans];
-new g_bitIsConnected;
 new g_bitIsAlive;
 new g_bitShortThrow;
 
@@ -1468,8 +1467,7 @@ public client_putinserver(id)
 	#endif
 
 	DestroyTask(id + TASK_INFO);
-	SetPlayerBit(g_bitIsConnected, id);
-	
+
 	get_user_name(id, g_szName[id], charsmax(g_szName[]));
 	get_user_authid(id, g_szSteamID[id], charsmax(g_szSteamID[]));
 	get_user_ip(id, g_szUserLastIP[id], charsmax(g_szUserLastIP[]) , 1);
@@ -1565,7 +1563,7 @@ public task_Info(id)
 	#endif
 
 	id -= TASK_INFO;
-	if (GetPlayerBit(g_bitIsConnected, id))
+	if (is_user_connected(id))
 	{
 		client_print_color(id, print_chat, "^4*^1 Playing ^4%s^1 v. ^3%s^1 powered by ^4%s", CSGO_TAG, VERSION, AUTHOR);
 	}
@@ -1581,7 +1579,6 @@ public client_disconnected(id)
 	g_iWhitePoints[id] = 0;
 	g_iYellowPoints[id] = 0;
 
-	ClearPlayerBit(g_bitIsConnected, id);
 	ClearPlayerBit(g_bitIsAlive, id);
 	g_eEnumBooleans[id][IsChangeNotAllowed] = false;
 	ClearPlayerBit(g_bitShortThrow, id);
@@ -1647,7 +1644,7 @@ public ev_NewRound()
 			for (new i; i < iNum; i++)
 			{
 				iPlayer = iPlayers[i];
-				if (GetPlayerBit(g_bitIsConnected, iPlayer))
+				if (is_user_connected(iPlayer))
 				{
 					delay = 0.2 * iPlayer;
 					set_task(delay, "task_Delayed_Swap", iPlayer + TASK_SWAP);
@@ -2130,7 +2127,7 @@ public task_SetIcon(id)
 	#endif
 
 	id -= TASK_SET_ICON;
-	if(GetPlayerBit(g_bitIsConnected, id))
+	if(is_user_connected(id))
 	{
 		_SetKillsIcon(id, 1);
 	}
@@ -2142,7 +2139,7 @@ public Ham_Player_Killed_Pre(id)
 	log_to_file("csgor_debug_logs.log", "Ham_Player_Killed_Pre()")
 	#endif
 
-	if(!GetPlayerBit(g_bitIsConnected,id))
+	if(!is_user_connected(id))
 	{
 		return HAM_IGNORED;
 	}
@@ -2179,7 +2176,7 @@ public Ham_Player_Killed_Post(id)
 	log_to_file("csgor_debug_logs.log", "Ham_Player_Killed_Post()")
 	#endif
 
-	if(!GetPlayerBit(g_bitIsConnected,id))
+	if(!is_user_connected(id))
 	{
 		return HAM_IGNORED;
 	}
@@ -2216,7 +2213,7 @@ public task_Respawn_Player(id)
 	#endif
 
 	id -= TASK_RESPAWN;
-	if (!GetPlayerBit(g_bitIsConnected, id) || GetPlayerBit(g_bitIsAlive, id))
+	if (!is_user_connected(id) || GetPlayerBit(g_bitIsAlive, id))
 		return HAM_IGNORED;
 
 	new CsTeams:team = cs_get_user_team(id);
@@ -4160,7 +4157,7 @@ public FM_Hook_PlayBackEvent_Primary_Pre(flags, id, eventid, Float:delay, Float:
 	log_to_file("csgor_debug_logs.log", "FM_Hook_PlayBackEvent_Primary_Pre()")
 	#endif
 
-	if(!is_user_connected(id) || pev_valid(id) != PDATA_SAFE || !GetPlayerBit(g_bitIsConnected, id) || !IsPlayer(id))
+	if(!is_user_connected(id) || pev_valid(id) != PDATA_SAFE || !IsPlayer(id))
 	{
 		return FMRES_IGNORED
 	}
@@ -4861,7 +4858,7 @@ public market_menu_handler(id, menu, item)
 		{
 			new tItem = g_iUserSellItem[index];
 			new price = g_iUserItemPrice[index];
-			if (!g_bLogged[index] || !GetPlayerBit(g_bitIsConnected, index))
+			if (!g_bLogged[index] || !is_user_connected(index))
 			{
 				goto _Return;
 				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SELLER");
@@ -5451,7 +5448,7 @@ public gift_menu_handler(id, menu, item)
 		{
 			new target = g_iGiftTarget[id];
 			new _item = g_iGiftItem[id];
-			if (!g_bLogged[target] || !GetPlayerBit(g_bitIsConnected, target))
+			if (!g_bLogged[target] || !is_user_connected(target))
 			{
 				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_TARGET");
 				g_iGiftTarget[id] = 0;
@@ -5703,7 +5700,7 @@ public hook_say(id)
 	log_to_file("csgor_debug_logs.log", "hook_say()")
 	#endif
 
-	if(!GetPlayerBit(g_bitIsConnected, id) || !g_iCvars[iCustomChat])
+	if(!is_user_connected(id) || !g_iCvars[iCustomChat])
 		return
 
 	new szMessage[128]
@@ -5718,7 +5715,7 @@ public hook_sayteam(id)
 	log_to_file("csgor_debug_logs.log", "hook_sayteam()")
 	#endif
 
-	if(!GetPlayerBit(g_bitIsConnected, id) || !g_iCvars[iCustomChat])
+	if(!is_user_connected(id) || !g_iCvars[iCustomChat])
 		return
 
 	new szMessage[128]
@@ -5873,6 +5870,9 @@ ProcessChat(id, szMessage[128], bool:bAllChat)
 	{
 		iPlayer = iPlayers[i];
 
+		if(!is_user_connected(iPlayer))
+			continue
+
 		if(!bAllChat)
 		{
 			if(get_user_team(id) != get_user_team(iPlayer))
@@ -6013,7 +6013,7 @@ public trade_menu_handler(id, menu, item)
 		{
 			new target = g_iTradeTarget[id];
 			new _item = g_iTradeItem[id];
-			if (!g_bLogged[target] || !GetPlayerBit(g_bitIsConnected, target))
+			if (!g_bLogged[target] || !is_user_connected(target))
 			{
 				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_TARGET");
 				_ResetTradeData(id);
@@ -6277,16 +6277,18 @@ public clcmd_say_accept(id)
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_HAVE_REQ");
 		return;
 	}
-	if (!g_bLogged[sender] || !GetPlayerBit(g_bitIsConnected, sender))
+	if (!g_bLogged[sender] || !is_user_connected(sender))
 	{
 		_ResetTradeData(id);
+		_ResetTradeData(sender);
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SENDER");
 		return;
 	}
-	if (!g_bTradeActive[sender] || id == g_iTradeTarget[sender])
+	if (!g_bTradeActive[sender] && id == g_iTradeTarget[sender])
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_TRADE_IS_CANCELED");
 		_ResetTradeData(id);
+		_ResetTradeData(sender);
 		return;
 	}
 	if (g_bTradeAccept[id])
@@ -6370,7 +6372,7 @@ public clcmd_say_deny(id)
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_HAVE_REQ");
 	}
-	if (!g_bLogged[sender] || !GetPlayerBit(g_bitIsConnected, sender))
+	if (!g_bLogged[sender] || !is_user_connected(sender))
 	{
 		_ResetTradeData(id);
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SENDER");
@@ -6590,7 +6592,7 @@ public task_TombolaRun(task)
 		if (g_iTombolaPlayers < 2)
 		{
 			new id = ArrayGetCell(g_aTombola, 0);
-			if(GetPlayerBit(g_bitIsConnected, id))
+			if(is_user_connected(id))
 			{
 				g_iUserPoints[id] = g_iCvars[iTombolaCost];
 				g_bUserPlay[id] = false;
@@ -6605,7 +6607,7 @@ public task_TombolaRun(task)
 		do {
 			random = random_num(0, size - 1);
 			id = ArrayGetCell(g_aTombola, random);
-			if(GetPlayerBit(g_bitIsConnected, id))
+			if(is_user_connected(id))
 			{
 				succes = true;
 				g_iUserPoints[id] += g_iTombolaPrize;
@@ -7562,20 +7564,25 @@ public clcmd_say_accept_coin(id)
 	if(sender < 1 || sender > 32)
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_HAVE_COIN_REQ");
-		return PLUGIN_HANDLED;
+		return;
 	}
-	if (!g_bLogged[sender] || !GetPlayerBit(g_bitIsConnected, sender))
+
+	if (!g_bLogged[sender] || !is_user_connected(sender))
 	{
 		_ResetCoinflipData(id);
+		_ResetCoinflipData(sender);
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SENDER");
-		return PLUGIN_HANDLED;
+		return;
 	}
-	if (!g_bCoinflipActive[sender] || id == g_iCoinflipTarget[sender])
+
+	if (!g_bCoinflipActive[sender] && id == g_iCoinflipTarget[sender])
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_IS_CANCELED");
 		_ResetCoinflipData(id);
-		return PLUGIN_HANDLED;
+		_ResetCoinflipData(sender);
+		return;
 	}
+
 	if (g_bCoinflipAccept[id])
 	{
 		new sItem = g_iCoinflipItem[sender];
@@ -7590,7 +7597,7 @@ public clcmd_say_accept_coin(id)
 			client_print_color(sender, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_FAIL2");
 			_ResetCoinflipData(id);
 			_ResetCoinflipData(sender);
-			return PLUGIN_HANDLED;
+			return;
 		}
 		new coin = random_num(1, 2);
 		switch(coin)
@@ -7624,7 +7631,6 @@ public clcmd_say_accept_coin(id)
 			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_SELECT_ITEM");
 		}
 	}
-	return PLUGIN_HANDLED;
 }
 
 public clcmd_say_deny_coin(id)
@@ -7637,25 +7643,24 @@ public clcmd_say_deny_coin(id)
 	if ( !IsPlayer(sender) )
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_HAVE_COIN_REQ");
-		return PLUGIN_HANDLED;
+		return;
 	}
 	if (!g_bLogged[sender] || !IsPlayer(sender))
 	{
 		_ResetCoinflipData(id);
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SENDER");
-		return PLUGIN_HANDLED;
+		return;
 	}
 	if (!g_bCoinflipActive[sender] && id == g_iCoinflipTarget[sender])
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_IS_CANCELED");
 		_ResetCoinflipData(id);
-		return PLUGIN_HANDLED;
+		return;
 	}
 	_ResetCoinflipData(id);
 	_ResetCoinflipData(sender);
 	client_print_color(sender, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_TARGET_REFUSE_COINFLIP", g_szName[id]);
 	client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_YOU_REFUSE_COINFLIP", g_szName[sender]);
-	return PLUGIN_HANDLED;
 }
 
 public ev_DeathMsg()
@@ -7870,11 +7875,11 @@ public ev_Damage( victim )
 	#endif
 
 	static attacker, damage;
-	if(victim && victim <= MAX_PLAYERS && GetPlayerBit(g_bitIsConnected, victim))
+	if(victim && victim <= MAX_PLAYERS && is_user_connected(victim))
 	{
 		attacker = get_user_attacker(victim);
 		
-		if(attacker && attacker <= MAX_PLAYERS && GetPlayerBit(g_bitIsConnected, attacker))
+		if(attacker && attacker <= MAX_PLAYERS && is_user_connected(attacker))
 		{
 			damage = read_data(2);
 
@@ -10157,7 +10162,7 @@ _SetKillsIcon(id, reset)
 	log_to_file("csgor_debug_logs.log", "_SetKillsIcon()")
 	#endif
 
-	if(!GetPlayerBit(g_bitIsConnected, id))
+	if(!is_user_connected(id))
 	{
 		return PLUGIN_HANDLED;
 	}
@@ -10225,10 +10230,9 @@ _DisplayMenu(id, menu)
 	log_to_file("csgor_debug_logs.log", "_DisplayMenu()")
 	#endif
 
-	if(!GetPlayerBit(g_bitIsConnected, id))
+	if(!is_user_connected(id))
 		return;
 
-	menu_cancel(id);
 	menu_display(id, menu);
 }
 
@@ -10833,10 +10837,8 @@ SendWeaponAnim(iPlayer, iAnim = 0)
 	log_to_file("csgor_debug_logs.log", "SendWeaponAnim()")
 	#endif
 
-	if(!is_user_connected(iPlayer) || !GetPlayerBit(g_bitIsConnected, iPlayer) || pev_valid(iPlayer) != PDATA_SAFE || !IsPlayer(iPlayer))
-	{
+	if(!is_user_connected(iPlayer) || pev_valid(iPlayer) != PDATA_SAFE || !IsPlayer(iPlayer))
 		return
-	}
 
 	g_iUserBodyGroup[iPlayer] = g_iUserViewBody[iPlayer][cs_get_user_weapon(iPlayer)]
 
@@ -10861,7 +10863,7 @@ SendWeaponAnim(iPlayer, iAnim = 0)
 	{
 		iSpectator = iszSpectators[i];
 
-		if(pev(iSpectator, pev_iuser1) != OBS_IN_EYE || pev(iSpectator, pev_iuser2) != iPlayer) 
+		if(pev(iSpectator, pev_iuser1) != OBS_IN_EYE || pev(iSpectator, pev_iuser2) != iPlayer || !is_user_connected(iSpectator)) 
 			continue;
 
 		set_pev(iSpectator, pev_weaponanim, iAnim);
