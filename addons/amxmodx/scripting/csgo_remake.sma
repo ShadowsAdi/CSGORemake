@@ -6527,10 +6527,6 @@ public tombola_menu_handler(id, menu, item)
 
 	if (item == MENU_EXIT || !is_user_connected(id))
 	{
-		if(is_user_connected(id))
-		{
-			_ShowGamesMenu(id);
-		}
 		return _MenuExit(menu);
 	}
 	if(!g_bLogged[id])
@@ -6594,7 +6590,7 @@ public task_TombolaRun(task)
 			new id = ArrayGetCell(g_aTombola, 0);
 			if(is_user_connected(id))
 			{
-				g_iUserPoints[id] = g_iCvars[iTombolaCost];
+				g_iUserPoints[id] += g_iCvars[iTombolaCost];
 				g_bUserPlay[id] = false;
 			}
 			client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_TOMB_FAIL_NUM");
@@ -6809,13 +6805,9 @@ public roulette_menu_handler(id, menu, item)
 	log_to_file("csgor_debug_logs.log", "roulette_menu_handler()")
 	#endif
 
-	if(item == MENU_EXIT  || !is_user_connected(id))
+	if(item == MENU_EXIT || !is_user_connected(id))
 	{
-		if(is_user_connected(id))
-		{
-			_ShowMainMenu(id);
-		}
-		return _MenuExit(id);	
+		return _MenuExit(menu);	
 	}
 	
 	new Data[6], Name[64];
