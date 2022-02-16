@@ -929,6 +929,7 @@ public plugin_init()
 	register_clcmd("say /denycoin", "clcmd_say_deny_coin");
 	register_clcmd("say /bonus", "clcmd_say_bonus");
 	register_clcmd("inspect", "inspect_weapon");
+
 	register_impulse(100, "inspect_weapon");
 
 	if (g_iCvars[iOverrideMenu])
@@ -1332,7 +1333,7 @@ public plugin_natives()
 	g_aDefaultSubmodel = ArrayCreate(1);
 	g_aSkinWeaponID = ArrayCreate(1);
 	g_aSkinName = ArrayCreate(48);
-	g_aSkinModel = ArrayCreate(48);
+	g_aSkinModel = ArrayCreate(MAX_SKIN_NAME);
 	g_aSkinModelP = ArrayCreate(48);
 	g_aSkinSubModel = ArrayCreate(1);
 	g_aSkinType = ArrayCreate(2);
@@ -4151,7 +4152,10 @@ public FM_Hook_PlayBackEvent_Pre(iFlags, pPlayer, iEvent, Float:fDelay, Float:ve
 	return FMRES_IGNORED;
 }
 
-public FM_Hook_PlayBackEvent_Primary_Pre(flags, id, eventid, Float:delay, Float:origin[3], Float:angles[3], Float:fparam1, Float:fparam2, iParam1, iParam2, bParam1, bParam2)
+public pfn_playbackevent(flags, entid, eventid, Float:delay, Float:Origin[3], Float:Angles[3], Float:fparam1, Float:fparam2, iparam1, iparam2, bparam1, bparam2)
+	return PLUGIN_HANDLED
+
+public FM_Hook_PlayBackEvent_Primary_Pre(iFlags, id, eventid, Float:delay, Float:FlOrigin[3], Float:FlAngles[3], Float:FlParam1, Float:FlParam2, iParam1, iParam2, bParam1, bParam2)
 {
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "FM_Hook_PlayBackEvent_Primary_Pre()")
@@ -4159,14 +4163,12 @@ public FM_Hook_PlayBackEvent_Primary_Pre(flags, id, eventid, Float:delay, Float:
 
 	if(!is_user_connected(id) || pev_valid(id) != PDATA_SAFE || !IsPlayer(id))
 	{
-		return FMRES_IGNORED
+		return
 	}
 
 	new iEnt = get_user_weapon(id)
 
 	PrimaryAttackReplace(id, iEnt)
-	
-	return FMRES_SUPERCEDE
 }
 
 DeployWeaponSwitch(iPlayer)
@@ -11030,7 +11032,6 @@ cmd_execute(id, const text[], any:...)
 	write_byte(10);
 	write_string(szMessage);
 	message_end();
-
 }
 
 DoIntermission()
