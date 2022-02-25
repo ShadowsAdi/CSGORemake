@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.15"
+#define VERSION "2.16"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -317,39 +317,41 @@ new g_iWeaponIndex[MAX_PLAYERS + 1];
 new g_iUserViewBody[MAX_PLAYERS + 1][31];
 new g_iUserBodyGroup[MAX_PLAYERS + 1];
 
+new const g_szGEvents[25][] = 
+{
+    "events/awp.sc",
+    "events/g3sg1.sc",
+    "events/ak47.sc",
+    "events/scout.sc",
+    "events/m249.sc",
+    "events/m4a1.sc",
+    "events/sg552.sc",
+    "events/aug.sc",
+    "events/sg550.sc",
+    "events/m3.sc",
+    "events/xm1014.sc",
+    "events/usp.sc",
+    "events/mac10.sc",
+    "events/ump45.sc",
+    "events/fiveseven.sc",
+    "events/p90.sc",
+    "events/deagle.sc",
+    "events/p228.sc",
+    "events/glock18.sc",
+    "events/mp5n.sc",
+    "events/tmp.sc",
+    "events/elite_left.sc",
+    "events/elite_right.sc",
+    "events/galil.sc",
+    "events/famas.sc"
+}
+
+// 512 because of MAX_EVENTS const from engine. Found this as the most reasonable way to achieve it without a loop in playback event.
+new bool:g_bGEventID[512];
+
 new inspectAnimation[] =
 {
-	0,
-	7,
-	0,
-	5,
-	0,
-	7,
-	0,
-	6,
-	6,
-	0,
-	16,
-	6,
-	6,
-	5,
-	6,
-	6,
-	16,
-	13,
-	6,
-	6,
-	5,
-	7,
-	14,
-	6,
-	5,
-	0,
-	6,
-	6,
-	6,
-	8,
-	6
+	0, 7, 0, 5, 0, 7, 0, 6, 6, 0, 16 ,6 ,6 ,5 ,6 ,6 ,16, 13, 6, 6, 5, 7, 14, 6, 5, 0, 6, 6, 6, 8, 6
 };
 
 new Handle:g_hSqlTuple;
@@ -1100,6 +1102,8 @@ public plugin_precache()
 	log_to_file("csgor_debug_logs.log", "plugin_precache()")
 	#endif
 
+	register_forward(FM_PrecacheEvent, "fw_PrecacheEvent_Post", 1)
+
 	RegisterForwards();
 
 	precache_sound(g_szTWin);
@@ -1281,6 +1285,19 @@ public precache_mess(iEnd)
 	ExecuteForward(g_iForwards[file_executed], g_iForwardResult, iEnd);
 }
 
+public fw_PrecacheEvent_Post(iType, const szEvent[])
+{
+	new iTemp
+	for(new i; i < sizeof(g_szGEvents); i++)
+	{
+		if (equali(szEvent, g_szGEvents[i]))
+		{
+			iTemp = get_orig_retval()
+			g_bGEventID[iTemp] = true
+		}
+	}
+}
+
 RegisterForwards()
 {
 	#if defined DEBUG
@@ -1299,8 +1316,8 @@ RegisterForwards()
 	g_iForwards[ file_executed ] = CreateMultiForward("csgor_on_configs_executed", ET_IGNORE, FP_CELL);
 	g_iForwards[ user_drop ] = CreateMultiForward("csgor_on_user_drop", ET_IGNORE, FP_CELL);
 	g_iForwards[ file_buffer ] = CreateMultiForward("csgor_read_configuration_data", ET_IGNORE, FP_STRING, FP_CELL, FP_CELL);
-
 }
+
 public plugin_cfg()
 {
 	#if defined DEBUG
@@ -4153,7 +4170,13 @@ public FM_Hook_PlayBackEvent_Pre(iFlags, pPlayer, iEvent, Float:fDelay, Float:ve
 }
 
 public pfn_playbackevent(flags, entid, eventid, Float:delay, Float:Origin[3], Float:Angles[3], Float:fparam1, Float:fparam2, iparam1, iparam2, bparam1, bparam2)
-	return PLUGIN_HANDLED
+{
+	if(g_bGEventID[eventid])
+	{
+		return PLUGIN_HANDLED
+	}
+	return PLUGIN_CONTINUE
+}
 
 public FM_Hook_PlayBackEvent_Primary_Pre(iFlags, id, eventid, Float:delay, Float:FlOrigin[3], Float:FlAngles[3], Float:FlParam1, Float:FlParam2, iParam1, iParam2, bParam1, bParam2)
 {
