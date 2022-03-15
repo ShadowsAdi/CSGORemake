@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.1.8"
+#define VERSION "2.1.9"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -1156,13 +1156,13 @@ public plugin_precache()
 				{
 					parse(szBuffer, iWeaponID, charsmax(iWeaponID), szNewModel, charsmax(szNewModel), iDefaultSubmodel, charsmax(iDefaultSubmodel));
 
-					if(szNewModel[0] == '-')
-						continue;
-
 					new id = str_to_num(iWeaponID);
 					copy(defaultModels[id], charsmax(defaultModels[]), szNewModel);
 					ArrayPushCell(g_aDefaultSubmodel, str_to_num(iDefaultSubmodel));
 					defaultCount++;
+
+					if(szNewModel[0] == '-')
+						continue;
 
 					if (file_exists(szNewModel))
 					{
@@ -1188,15 +1188,10 @@ public plugin_precache()
 						continue
 					}
 
-					if (file_exists(weaponP))
+					if (16 < strlen(weaponP))
 					{
 						g_bSkinHasModelP[g_iSkinsNum] = true;
 						precache_model(weaponP);
-					}
-					else
-					{
-						log_to_file("csgo_remake_errors.log" ,"%s Can't find %s p_model for SKINS. Param: 4. Line %i", CSGO_TAG, szWeaponModel, iLine);
-						continue
 					}
 
 					ArrayPushCell(g_aSkinWeaponID, str_to_num(weaponid));
@@ -2414,7 +2409,7 @@ public task_HUD(id)
 					skin = GetSkinInfo(id, weapon, iActiveItem);
 				}
 
-				if(skin == -1)
+				if(skin == -1 || bError)
 				{
 					formatex(szSkin, charsmax(szSkin), "%L", LANG_SERVER, "CSGOR_NO_ACTIVE_SKIN_HUD");
 					copy(szTemp, charsmax(szTemp), szSkin);
@@ -4297,8 +4292,11 @@ DeployWeaponSwitch(iPlayer)
 
 		if(!g_bLogged[iPlayer] || userskin == -1)
 		{
-			set_pev(iPlayer, pev_viewmodel2, defaultModels[g_iWeaponIndex[iPlayer]]);
-			g_iUserViewBody[iPlayer][weaponid] = ArrayGetCell(g_aDefaultSubmodel, g_iWeaponIndex[iPlayer]);
+			if(defaultModels[g_iWeaponIndex[iPlayer]][0] != '-')
+			{
+				set_pev(iPlayer, pev_viewmodel2, defaultModels[g_iWeaponIndex[iPlayer]]);
+				g_iUserViewBody[iPlayer][weaponid] = ArrayGetCell(g_aDefaultSubmodel, g_iWeaponIndex[iPlayer]);
+			}
 		}
 	}
 
