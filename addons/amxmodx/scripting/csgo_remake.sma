@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.16"
+#define VERSION "2.1.7"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -1151,13 +1151,14 @@ public plugin_precache()
 				case secDefaultModels:
 				{
 					parse(szBuffer, iWeaponID, charsmax(iWeaponID), szNewModel, charsmax(szNewModel), iDefaultSubmodel, charsmax(iDefaultSubmodel));
+
+					if(szNewModel[0] == '-')
+						continue;
+
 					new id = str_to_num(iWeaponID);
 					copy(defaultModels[id], charsmax(defaultModels[]), szNewModel);
 					ArrayPushCell(g_aDefaultSubmodel, str_to_num(iDefaultSubmodel));
 					defaultCount++;
-					
-					if(szNewModel[0] == '-')
-						continue;
 
 					if (file_exists(szNewModel))
 					{
@@ -1166,12 +1167,34 @@ public plugin_precache()
 					else
 					{
 						log_to_file("csgo_remake_errors.log" ,"%s Can't find %s model on DEFAULT iSection. Line %i", CSGO_TAG, szNewModel, iLine);
-						set_fail_state("See csgo_remake_errors.log");
+						continue
 					}
 				}
 				case secSkins:
 				{
 					parse(szBuffer, weaponid, charsmax(weaponid), szWeaponName, charsmax(szWeaponName), szWeaponModel, charsmax(szWeaponModel), weaponP, charsmax(weaponP), weaponsubmodel, charsmax(weaponsubmodel), weapontype, charsmax(weapontype), weaponchance, charsmax(weaponchance), weaponcostmin, charsmax(weaponcostmin), weapondusts, charsmax(weapondusts));
+
+					if (file_exists(szWeaponModel))
+					{
+						precache_model(szWeaponModel);
+					}
+					else
+					{
+						log_to_file("csgo_remake_errors.log" ,"%s Can't find %s v_model for SKINS. Param: 3. Line %i", CSGO_TAG, szWeaponModel, iLine);
+						continue
+					}
+
+					if (file_exists(weaponP))
+					{
+						g_bSkinHasModelP[g_iSkinsNum] = true;
+						precache_model(weaponP);
+					}
+					else
+					{
+						log_to_file("csgo_remake_errors.log" ,"%s Can't find %s p_model for SKINS. Param: 4. Line %i", CSGO_TAG, szWeaponModel, iLine);
+						continue
+					}
+
 					ArrayPushCell(g_aSkinWeaponID, str_to_num(weaponid));
 					ArrayPushString(g_aSkinName, szWeaponName);
 					ArrayPushString(g_aSkinModel, szWeaponModel);
@@ -1181,20 +1204,7 @@ public plugin_precache()
 					ArrayPushCell(g_aSkinChance, str_to_num(weaponchance));
 					ArrayPushCell(g_aSkinCostMin, str_to_num(weaponcostmin));
 					ArrayPushCell(g_aDustsSkin, str_to_num(weapondusts));
-					if (file_exists(szWeaponModel))
-					{
-						precache_model(szWeaponModel);
-					}
-					else if (!file_exists(szWeaponModel))
-					{
-						log_to_file("csgo_remake_errors.log" ,"%s Can't find %s model for SKINS. Line %i", CSGO_TAG, szWeaponModel, iLine);
-						set_fail_state("See csgo_remake_errors.log");
-					}
-					if (16 < strlen(weaponP))
-					{
-						g_bSkinHasModelP[g_iSkinsNum] = true;
-						precache_model(weaponP);
-					}
+
 					switch (weapontype[0])
 					{
 						case 'c':
@@ -2377,15 +2387,37 @@ public task_HUD(id)
 				new userRank = g_iUserRank[id];
 				new szSkin[MAX_SKIN_NAME], szTemp[128];
 				new iWeaponID = get_user_weapon(id);
+				new bool:bError = false;
 
-				if(g_iStattrackWeap[id][iSelected][iWeaponID] < 0 && g_iUserSelectedSkin[id][iWeaponID] < 0)
+				new iActiveItem = get_pdata_cbase(id, OFFSET_ACTIVE_ITEM, XO_PLAYER);
+
+				if(pev_valid(iActiveItem) != PDATA_SAFE)
+				{
+					bError = true;
+				}
+
+				new weapon = get_pdata_int(iActiveItem, OFFSET_ID, XO_WEAPON);
+
+				if((1 << weapon) & weaponsWithoutSkin)
+				{
+					bError = true;
+				}
+
+				new skin
+
+				if(!bError)
+				{
+					skin = GetSkinInfo(id, weapon, iActiveItem);
+				}
+
+				if(skin == -1)
 				{
 					formatex(szSkin, charsmax(szSkin), "%L", LANG_SERVER, "CSGOR_NO_ACTIVE_SKIN_HUD");
-					copy(szTemp, charsmax(szTemp), szSkin)
+					copy(szTemp, charsmax(szTemp), szSkin);
 				}
 				else
 				{
-					ArrayGetString(g_aSkinName, g_iStattrackWeap[id][bStattrack][iWeaponID] ? g_iStattrackWeap[id][iSelected][iWeaponID] : g_iUserSelectedSkin[id][iWeaponID], szSkin, charsmax(szSkin));
+					ArrayGetString(g_aSkinName, skin, szSkin, charsmax(szSkin));
 					if(g_iStattrackWeap[id][bStattrack][iWeaponID])
 					{
 						formatex(szTemp, charsmax(szTemp), "StatTrack (TM) %s^n%L", szSkin, LANG_SERVER, "CSGOR_CONFIRMED_KILLS_HUD", g_iStattrackWeap[id][iKillCount][g_iStattrackWeap[id][iSelected][iWeaponID]]);
@@ -4170,7 +4202,7 @@ public FM_Hook_PlayBackEvent_Pre(iFlags, pPlayer, iEvent, Float:fDelay, Float:ve
 }
 
 public pfn_playbackevent(flags, entid, eventid, Float:delay, Float:Origin[3], Float:Angles[3], Float:fparam1, Float:fparam2, iparam1, iparam2, bparam1, bparam2)
-{
+{ 
 	if(g_bGEventID[eventid])
 	{
 		return PLUGIN_HANDLED
@@ -5398,7 +5430,7 @@ public _ShowGiftMenu(id)
 	new bool:HasTarget;
 	new bool:HasItem;
 	new target = g_iGiftTarget[id];
-	if (target)
+	if (is_user_connected(target))
 	{
 		formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_GM_TARGET", g_szName[target]);
 		szItem[0] = 0;
@@ -5411,6 +5443,7 @@ public _ShowGiftMenu(id)
 		szItem[0] = 0;
 		menu_additem(menu, temp, szItem);
 	}
+
 	if (!_IsGoodItem(g_iGiftItem[id]))
 	{
 		formatex(temp, charsmax(temp), "\r%L^n", LANG_SERVER, "CSGOR_GM_SELECT_ITEM");
@@ -5942,7 +5975,7 @@ public _ShowTradeMenu(id)
 	new bool:HasTarget;
 	new bool:HasItem;
 	new target = g_iTradeTarget[id];
-	if (target)
+	if (is_user_connected(target))
 	{
 		formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_GM_TARGET", g_szName[target]);
 		szItem[0] = 0;
@@ -7271,7 +7304,7 @@ public _ShowCoinflipMenu(id)
 	new bool:HasTarget;
 	new bool:HasItem;
 	new target = g_iCoinflipTarget[id];
-	if (target)
+	if (is_user_connected(target))
 	{
 		formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_COINFLIP_TARGET", g_szName[target]);
 		menu_additem(menu, temp, "0");
@@ -9558,57 +9591,9 @@ public clcmd_say_skin(id)
 	{
 		return PLUGIN_HANDLED;
 	}
-	new skin;
-	switch (weapon)
-	{
-		case 29:
-		{
-			if(g_iStattrackWeap[player][bStattrack][weapon])
-			{
-				if(g_iStattrackWeap[player][iSelected][weapon] != -1)
-				{
-					skin = g_iStattrackWeap[player][iSelected][weapon];
-				}
-			}
-			else
-			{
-				if(g_iUserSelectedSkin[player][weapon] != -1)
-				{
-					skin = g_iUserSelectedSkin[player][weapon];
-				}
-			}
-			
-		}
-		default:
-		{
-			new imp = pev(iActiveItem, pev_impulse);
-			if (imp)
-			{
-				skin = imp - 1;
-			}
-			else if (!imp)
-			{
-				skin = (g_iStattrackWeap[player][bStattrack][weapon] ? g_iStattrackWeap[player][iSelected][weapon] : g_iUserSelectedSkin[player][weapon]);
-			}
-			else
-			{
-				if(g_iStattrackWeap[player][bStattrack][weapon])
-				{
-					if(g_iStattrackWeap[player][iSelected][weapon] != -1)
-					{
-						skin = g_iStattrackWeap[player][iSelected][weapon];
-					}
-				}
-				else
-				{
-					if(g_iUserSelectedSkin[player][weapon] != -1)
-					{
-						skin = g_iUserSelectedSkin[player][weapon];
-					}
-				}
-			}
-		}
-	}
+
+	new skin = GetSkinInfo(player, weapon, iActiveItem);
+	
 	if(skin == -1 || (g_iStattrackWeap[player][bStattrack][weapon] ? g_iStattrackWeap[player][iSelected][weapon] : g_iUserSelectedSkin[player][weapon]) == -1)
 	{
 		client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_ACTIVE_SKIN");
@@ -11065,4 +11050,63 @@ DoIntermission()
 
     emessage_begin(MSG_BROADCAST, SVC_INTERMISSION);
     emessage_end();
+}
+
+GetSkinInfo(player, weapon, iActiveItem)
+{
+	new skin;
+
+	switch (weapon)
+	{
+		case 29:
+		{
+			if(g_iStattrackWeap[player][bStattrack][weapon])
+			{
+				if(g_iStattrackWeap[player][iSelected][weapon] != -1)
+				{
+					skin = g_iStattrackWeap[player][iSelected][weapon];
+				}
+			}
+			else
+			{
+				if(g_iUserSelectedSkin[player][weapon] != -1)
+				{
+					skin = g_iUserSelectedSkin[player][weapon];
+				}
+			}
+			
+		}
+		default:
+		{
+			new imp = pev(iActiveItem, pev_impulse);
+
+			if (imp)
+			{
+				skin = imp - 1;
+			}
+			else if (!imp)
+			{
+				skin = (g_iStattrackWeap[player][bStattrack][weapon] ? g_iStattrackWeap[player][iSelected][weapon] : g_iUserSelectedSkin[player][weapon]);
+			}
+			else
+			{
+				if(g_iStattrackWeap[player][bStattrack][weapon])
+				{
+					if(g_iStattrackWeap[player][iSelected][weapon] != -1)
+					{
+						skin = g_iStattrackWeap[player][iSelected][weapon];
+					}
+				}
+				else
+				{
+					if(g_iUserSelectedSkin[player][weapon] != -1)
+					{
+						skin = g_iUserSelectedSkin[player][weapon];
+					}
+				}
+			}
+		}
+	}
+
+	return skin
 }
