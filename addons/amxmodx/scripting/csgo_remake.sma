@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.1.7"
+#define VERSION "2.1.8"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -301,7 +301,8 @@ enum _:EnumCvars
 	Float:flRouletteCooldown,
 	iRoundEndSounds,
 	iCopyRight,
-	iCustomChat
+	iCustomChat,
+	iAntiSpam
 }
 
 enum _:EnumRoundStats
@@ -670,7 +671,7 @@ const SECONDARY_WEAPONS_BIT_SUM = (1<<CSW_P228)|(1<<CSW_ELITE)|(1<<CSW_FIVESEVEN
 public plugin_init()
 {
 	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "plugin_init() start plugin");
+	log_to_file("csgor_debug_logs.log", "plugin_init()");
 	#endif
 
 	register_plugin(PLUGIN, VERSION, AUTHOR);
@@ -847,6 +848,9 @@ public plugin_init()
 
 	pcvar = create_cvar("csgor_custom_chat", "1", FCVAR_NONE, "(0|1) Enable / Disable Mod's custom chat ( Chat rank, chat prefix, etc )", true, 0.0, true, 1.0);
 	bind_pcvar_num(pcvar, g_iCvars[iCustomChat]);
+
+	pcvar = create_cvar("csgor_antispam_drop", "1", FCVAR_NONE, "(0|1) Enable / Disable anti spam in chat while opening / crafting skins.^n ATTENTION! If ^"csgor_show_dropcraft^" is ^"1^" anti spam is always active.", true, 0.0, true, 1.0)
+	bind_pcvar_num(pcvar, g_iCvars[iAntiSpam]);
 
 	AutoExecConfig(true, "csgo_remake", "csgor" );
 	
@@ -4406,10 +4410,13 @@ public oc_craft_menu_handler(id, menu, item)
 				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_OPEN_NOT_ENOUGH");
 				_ShowOpenCaseCraftMenu(id);
 			}
-			else if (get_systime() < g_iLastOpenCraft[id] + 5)
+			else if(g_iCvars[iAntiSpam] || g_iCvars[iShowDropCraft])
 			{
-				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_SPAM", 5);
-				_ShowOpenCaseCraftMenu(id);
+				if (get_systime() < g_iLastOpenCraft[id] + 5)
+				{
+					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_SPAM", 5);
+					_ShowOpenCaseCraftMenu(id);
+				}
 			}
 			else
 			{
@@ -4425,11 +4432,14 @@ public oc_craft_menu_handler(id, menu, item)
 			}
 			else
 			{
-				if (get_systime() < g_iLastOpenCraft[id] + 5)
+				if(g_iCvars[iAntiSpam] || g_iCvars[iShowDropCraft])
 				{
-					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_SPAM", 5);
-					_ShowOpenCaseCraftMenu(id);
-					return PLUGIN_HANDLED;
+					if (get_systime() < g_iLastOpenCraft[id] + 5)
+					{
+						client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_SPAM", 5);
+						_ShowOpenCaseCraftMenu(id);
+						return PLUGIN_HANDLED;
+					}
 				}
 				_CraftSkin(id);
 			}
@@ -4475,11 +4485,14 @@ public oc_craft_menu_handler(id, menu, item)
 			}
 			else
 			{
-				if (get_systime() < g_iLastOpenCraft[id] + 5)
+				if(g_iCvars[iAntiSpam] || g_iCvars[iShowDropCraft])
 				{
-					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_SPAM", 5);
-					_ShowOpenCaseCraftMenu(id);
-					return PLUGIN_HANDLED;
+					if (get_systime() < g_iLastOpenCraft[id] + 5)
+					{
+						client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_SPAM", 5);
+						_ShowOpenCaseCraftMenu(id);
+						return PLUGIN_HANDLED;
+					}
 				}
 				_CraftStattrackSkin(id);
 			}
@@ -4725,6 +4738,7 @@ public _CraftStattrackSkin(id)
 			return PLUGIN_HANDLED;
 		}
 	} while (run);
+
 	if (succes)
 	{
 		new Skin[MAX_SKIN_NAME], szTemp[MAX_SKIN_NAME];
