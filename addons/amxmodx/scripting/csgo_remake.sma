@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.1.9"
+#define VERSION "2.2"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -2550,8 +2550,9 @@ public _LoadData(id)
 		}
 		case MYSQL:
 		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id]);
-			
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
+		
+
 			if(!SQL_Execute(iQuery))
 			{
 				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError));
@@ -2559,42 +2560,43 @@ public _LoadData(id)
 				SQL_FreeHandle(iQuery);
 				return PLUGIN_HANDLED
 			}
+
 			new szQuery[512];
 			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? false : true;
 
    			if(bFoundData)
    			{
-   				formatex(szQuery, charsmax(szQuery), "INSERT INTO `csgor_data`\
-	   				(`Name`,\
-	   				`SteamID`,\
-	   				`Last IP`,\
-	   				`Password`,\
-	   				`ChatTag`,\
-	   				`ChatTag Color`,\
-	   				`Points`,\
-	   				`Scraps`,\
-	   				`Keys`,\
-	   				`Cases`,\
-	   				`Kills`,\
-	   				`Rank`,\
-	   				`Bonus Timestamp`,\
-	   				`Promocode`\
+   				formatex(szQuery, charsmax(szQuery), "INSERT INTO `csgor_data` \
+	   				(`Name`, \
+	   				`SteamID`, \
+	   				`Last IP`, \
+	   				`Password`, \
+	   				`ChatTag`, \
+	   				`ChatTag Color`, \
+	   				`Points`, \
+	   				`Scraps`, \
+	   				`Keys`, \
+	   				`Cases`, \
+	   				`Kills`, \
+	   				`Rank`, \
+	   				`Bonus Timestamp`, \
+	   				`Promocode` \
 	   				) VALUES (^"%s^", ^"%s^", ^"%s^", ^"%s^",^"%s^",'0','0','0','0','0','0','0','0','0');", g_szName[id], g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id]);
    			}
    			else
    			{
    				formatex(szQuery, charsmax(szQuery), "SELECT \
-   					`Password`,\
-   					`ChatTag`,\
-   					`ChatTag Color`,\
-   					`Points`,\
-   					`Scraps`,\
-   					`Keys`,\
-   					`Cases`,\
-   					`Kills`,\
-   					`Rank`,\
-   					`Bonus Timestamp`,\
-   					`Promocode`\
+   					`Password`, \
+   					`ChatTag`, \
+   					`ChatTag Color`, \
+   					`Points`, \
+   					`Scraps`, \
+   					`Keys`, \
+   					`Cases`, \
+   					`Kills`, \
+   					`Rank`, \
+   					`Bonus Timestamp`, \
+   					`Promocode` \
    					FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id]);
    			}
 
@@ -2652,23 +2654,23 @@ public _LoadSkins(id)
 
 	if(bFoundData)
 	{
-		formatex(szQuery, charsmax(szQuery), "INSERT INTO `csgor_skins`\
-		(`Name`,\
-		`Skins`,\
-		`Stattrack Skins`,\
-		`Stattrack Kills`,\
-		`Selected Stattrack`,\
-		`Selected Skins`\
+		formatex(szQuery, charsmax(szQuery), "INSERT INTO `csgor_skins` \
+		(`Name`, \
+		`Skins`, \
+		`Stattrack Skins`, \
+		`Stattrack Kills`, \
+		`Selected Stattrack`, \
+		`Selected Skins` \
 		) VALUES (^"%s^",'0','0','0','0','0');", g_szName[id]);
 	}
 	else
 	{
-		formatex(szQuery, charsmax(szQuery), "SELECT\
-		`Skins`,\
-		`Stattrack Skins`,\
-		`Stattrack Kills`,\
-		`Selected Stattrack`,\
-		`Selected Skins`\
+		formatex(szQuery, charsmax(szQuery), "SELECT \
+		`Skins`, \
+		`Stattrack Skins`, \
+		`Stattrack Kills`, \
+		`Selected Stattrack`, \
+		`Selected Skins` \
 		FROM `csgor_skins` WHERE `Name` = ^"%s^";", g_szName[id]);
 	}
 
@@ -2767,49 +2769,31 @@ public _SaveData(id)
 			szQuery[0] = 0;
 			new iTimestamp;
 			IsTaken(id, iTimestamp);
-			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data`\
-			SET `SteamID`=^"%s^",\
-			`Last IP`=^"%s^",\
-			`Password`=^"%s^",\
-			`ChatTag`=^"%s^",\
-			`ChatTag Color`=^"%s^",\
-			`Points`='%i',\
-			`Scraps`='%i',\
-			`Keys`='%i',\
-			`Cases`='%i',\
-			`Kills`='%i',\
-			`Rank`='%i',\
-			`Bonus Timestamp`='%i',\
-			`Promocode`='%i'\
+			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
+			SET `SteamID`=^"%s^", \
+			`Last IP`=^"%s^", \
+			`Password`=^"%s^", \
+			`ChatTag`=^"%s^", \
+			`ChatTag Color`=^"%s^", \
+			`Points`='%i', \
+			`Scraps`='%i', \
+			`Keys`='%i', \
+			`Cases`='%i', \
+			`Kills`='%i', \
+			`Rank`='%i', \
+			`Bonus Timestamp`='%i', \
+			`Promocode`='%i' \
 			WHERE `Name`=^"%s^";", g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id], iTimestamp, g_iPromoCount[id], g_szName[id]);
-			
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
 
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", g_szSqlError);
-				return PLUGIN_HANDLED
-			}
+			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
-			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins`\
-			SET `Skins`=^"%s^",\
-			`Selected Stattrack`=^"%s^",\
-			`Selected Skins`=^"%s^"\
+			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
+			SET `Skins`=^"%s^", \
+			`Selected Stattrack`=^"%s^", \
+			`Selected Skins`=^"%s^" \
 			WHERE `Name`=^"%s^";", g_iWeapszBuffer, stattszBuffer, skinBuffer, g_szName[id]);
 
-			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery);
-
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError));
-				log_to_file("csgo_remake_errors.log", g_szSqlError);
-				return PLUGIN_HANDLED
-			}
-
-			SQL_Execute(iQuery);
-
-			SQL_FreeHandle(iQuery);
+			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
 			task_update_stattrack(id, "0", .iType = MYSQL);
 
@@ -2846,22 +2830,28 @@ public task_update_stattrack(id, szPassed[MAX_SKINS * 2], iType)
 		}
 		case MYSQL:
 		{
-			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins`\
-			SET `Stattrack Skins`=^"%s^"\
+			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
+			SET `Stattrack Skins`=^"%s^" \
 			WHERE `Name`=^"%s^";", g_iStattrack, g_szName[id]);
 
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
-
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", g_szSqlError);
-				return
-			}
-
-			SQL_FreeHandle(iQuery)
+			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
 			task_update_stattrack_kills(id, "0", .iType = MYSQL);
+		}
+	}
+}
+
+public QueryHandler(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize, Float:flQueueTime)
+{
+	switch(iFailState)
+	{
+		case TQUERY_CONNECT_FAILED: 
+		{
+			log_amx("[SQL Error] Connection failed (%i): %s", Errcode, Error);
+		}
+		case TQUERY_QUERY_FAILED:
+		{
+			log_amx("[SQL Error] Query failed (%i): %s", Errcode, Error);
 		}
 	}
 }
@@ -2897,16 +2887,7 @@ public task_update_stattrack_kills(id, szPassed[MAX_SKINS * 2 + 94], iType)
 			SET `Stattrack Kills`=^"%s^"\
 			WHERE `Name`=^"%s^";", g_iStattKills, g_szName[id]);
 
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
-
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", g_szSqlError);
-				return
-			}
-
-			SQL_FreeHandle(iQuery);
+			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 		}
 	}
 }
@@ -4408,17 +4389,17 @@ public oc_craft_menu_handler(id, menu, item)
 				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_OPEN_NOT_ENOUGH");
 				_ShowOpenCaseCraftMenu(id);
 			}
-			else if(g_iCvars[iAntiSpam] || g_iCvars[iShowDropCraft])
+			else 
 			{
-				if (get_systime() < g_iLastOpenCraft[id] + 5)
+				if (get_systime() < g_iLastOpenCraft[id] + 5 && (g_iCvars[iAntiSpam] || g_iCvars[iShowDropCraft]))
 				{
 					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_SPAM", 5);
 					_ShowOpenCaseCraftMenu(id);
 				}
-			}
-			else
-			{
-				_OpenCase(id);
+				else
+				{
+					_OpenCase(id)
+				}
 			}
 		}
 		case 1:
@@ -4509,6 +4490,7 @@ public _OpenCase(id)
 	{
 		return PLUGIN_HANDLED;
 	}
+
 	new timer;
 	new bool:succes;
 	new rSkin;
@@ -4516,52 +4498,34 @@ public _OpenCase(id)
 	new skinID;
 	new wChance;
 	new run;
+
+	if (0 >= g_iDropSkinNum)
+	{
+		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_DROP_SKINS");
+		_ShowOpenCaseCraftMenu(id);
+		return PLUGIN_HANDLED
+	}
+
 	do {
 		rSkin = random_num(0, g_iDropSkinNum -1);
 		rChance = random_num(1, 100);
-		if (0 >= g_iDropSkinNum)
-		{
-			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_DROP_SKINS");
-			_ShowOpenCaseCraftMenu(id);
-			return PLUGIN_HANDLED;
-		}
+
 		skinID = ArrayGetCell(g_aDropSkin, rSkin);
 		wChance = ArrayGetCell(g_aSkinChance, skinID);
 		if (rChance >= wChance)
 		{
 			succes = true;
 		}
+
 		timer++;
+
 		if (!(timer < 5 && !succes))
 		{
-			if (succes)
-			{
-				new Skin[48];
-				ArrayGetString(g_aSkinName, skinID, Skin, charsmax(Skin));
-				g_iUserSkins[id][skinID]++;
-				g_iUserCases[id]--;
-				g_iUserKeys[id]--;
-				_Save(id);
-				if (0 < g_iCvars[iShowDropCraft])
-				{
-					client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DROP_SUCCESS_ALL", g_szName[id], Skin, 100 - wChance);
-				}
-				else
-				{
-					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DROP_SUCCESS", Skin, 100 - wChance);
-				}
-				emit_sound(id, CHAN_AUTO, g_szCaseOpen, VOL_NORM, ATTN_NONE, 0, PITCH_NORM);
-				g_iLastOpenCraft[id] = get_systime();
-				_ShowOpenCaseCraftMenu(id);
-				ExecuteForward(g_iForwards[ user_case_opening ], g_iForwardResult, id);
-			}
-			else
-			{
-				_ShowOpenCaseCraftMenu(id);
-			}
-			return PLUGIN_HANDLED;
+			break;
 		}
 	} while (run);
+
+
 	if (succes)
 	{
 		new Skin[48];
@@ -4570,6 +4534,7 @@ public _OpenCase(id)
 		g_iUserCases[id]--;
 		g_iUserKeys[id]--;
 		_Save(id);
+
 		if (0 < g_iCvars[iShowDropCraft])
 		{
 			client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DROP_SUCCESS_ALL", g_szName[id], Skin, 100 - wChance);
@@ -4578,6 +4543,7 @@ public _OpenCase(id)
 		{
 			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DROP_SUCCESS", Skin, 100 - wChance);
 		}
+
 		g_iLastOpenCraft[id] = get_systime();
 		_ShowOpenCaseCraftMenu(id);
 		ExecuteForward(g_iForwards[ user_case_opening ], g_iForwardResult, id);
@@ -4606,50 +4572,33 @@ public _CraftSkin(id)
 	new skinID;
 	new wChance;
 	new run;
+
+	if (0 >= g_iCraftSkinNum)
+	{
+		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_CRAFT_SKINS");
+		_ShowOpenCaseCraftMenu(id);
+		return PLUGIN_HANDLED;
+	}
+
 	do {
 		rSkin = random_num(0, g_iCraftSkinNum -1);
 		rChance = random_num(1, 100);
-		if (0 >= g_iCraftSkinNum)
-		{
-			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_CRAFT_SKINS");
-			_ShowOpenCaseCraftMenu(id);
-			return PLUGIN_HANDLED;
-		}
+		
 		skinID = ArrayGetCell(g_aCraftSkin, rSkin);
 		wChance = ArrayGetCell(g_aSkinChance, skinID);
 		if (rChance >= wChance)
 		{
 			succes = true;
 		}
+
 		timer++;
+
 		if (!(timer < 5 && !succes))
 		{
-			if (succes)
-			{
-				new Skin[48];
-				ArrayGetString(g_aSkinName, skinID, Skin, charsmax(Skin));
-				g_iUserSkins[id][skinID]++;
-				g_iUserDusts[id] -= g_iCvars[iCraftCost];
-				_Save(id);
-				if (0 < g_iCvars[iShowDropCraft])
-				{
-					client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_CRAFT_SUCCESS_ALL", g_szName[id], Skin, 100 - wChance);
-				}
-				else
-				{
-					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_CRAFT_SUCCESS", Skin, 100 - wChance);
-				}
-				g_iLastOpenCraft[id] = get_systime();
-				_ShowOpenCaseCraftMenu(id);
-				ExecuteForward(g_iForwards[ user_craft ], g_iForwardResult, id);
-			}
-			else
-			{
-				_ShowOpenCaseCraftMenu(id);
-			}
-			return PLUGIN_HANDLED;
+			break;
 		}
 	} while (run);
+
 	if (succes)
 	{
 		new Skin[48];
@@ -4692,48 +4641,29 @@ public _CraftStattrackSkin(id)
 	new skinID;
 	new wChance;
 	new run;
+
+	if (0 >= g_iCraftSkinNum)
+	{
+		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_CRAFT_SKINS");
+		_ShowOpenCaseCraftMenu(id);
+		return PLUGIN_HANDLED;
+	}
+
 	do {
 		rChance = random_num(1, 100);
-		if (0 >= g_iCraftSkinNum)
-		{
-			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_CRAFT_SKINS");
-			_ShowOpenCaseCraftMenu(id);
-			return PLUGIN_HANDLED;
-		}
+		
 		skinID = random(g_iSkinsNum - 1);
 		wChance = ArrayGetCell(g_aSkinChance, skinID);
 		if (rChance >= wChance)
 		{
 			succes = true;
 		}
+
 		timer++;
+
 		if (!(timer < 5 && !succes))
 		{
-			if (succes)
-			{
-				new Skin[48], szTemp[48];
-				ArrayGetString(g_aSkinName, skinID, Skin, charsmax(Skin));
-				FormatStattrack(Skin, charsmax(Skin), szTemp);
-				g_iStattrackWeap[id][iWeap][skinID]++;
-				g_iUserDusts[id] -= g_iCvars[iStatTrackCost];
-				_Save(id);
-				if (0 < g_iCvars[iShowDropCraft])
-				{
-					client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_CRAFT_SUCCESS_ALL", g_szName[id], szTemp, 100 - wChance);
-				}
-				else
-				{
-					client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_CRAFT_SUCCESS", szTemp, 100 - wChance);
-				}
-				g_iLastOpenCraft[id] = get_systime();
-				_ShowOpenCaseCraftMenu(id);
-				ExecuteForward(g_iForwards[ user_craft ], g_iForwardResult, id);
-			}
-			else
-			{
-				_ShowOpenCaseCraftMenu(id);
-			}
-			return PLUGIN_HANDLED;
+			break;
 		}
 	} while (run);
 
