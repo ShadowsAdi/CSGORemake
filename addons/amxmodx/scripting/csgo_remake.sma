@@ -2385,7 +2385,6 @@ public task_HUD(id)
 			{
 				new userRank = g_iUserRank[id];
 				new szSkin[MAX_SKIN_NAME], szTemp[128];
-				new iWeaponID = get_user_weapon(id);
 				new bool:bError = false;
 
 				new iActiveItem = get_pdata_cbase(id, OFFSET_ACTIVE_ITEM, XO_PLAYER);
@@ -2417,9 +2416,9 @@ public task_HUD(id)
 				else
 				{
 					ArrayGetString(g_aSkinName, skin, szSkin, charsmax(szSkin));
-					if(g_iStattrackWeap[id][bStattrack][iWeaponID])
+					if(g_iStattrackWeap[id][bStattrack][weapon])
 					{
-						formatex(szTemp, charsmax(szTemp), "StatTrack (TM) %s^n%L", szSkin, LANG_SERVER, "CSGOR_CONFIRMED_KILLS_HUD", g_iStattrackWeap[id][iKillCount][g_iStattrackWeap[id][iSelected][iWeaponID]]);
+						formatex(szTemp, charsmax(szTemp), "StatTrack (TM) %s^n%L", szSkin, LANG_SERVER, "CSGOR_CONFIRMED_KILLS_HUD", g_iStattrackWeap[id][iKillCount][g_iStattrackWeap[id][iSelected][weapon]]);
 					}
 					else
 					{
@@ -9536,7 +9535,7 @@ public clcmd_say_skin(id)
 
 	new skin = GetSkinInfo(player, weapon, iActiveItem);
 	
-	if(skin == -1 || (g_iStattrackWeap[player][bStattrack][weapon] ? g_iStattrackWeap[player][iSelected][weapon] : g_iUserSelectedSkin[player][weapon]) == -1)
+	if(skin == -1)
 	{
 		client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_ACTIVE_SKIN");
 		return PLUGIN_HANDLED;
@@ -10996,7 +10995,7 @@ DoIntermission()
 
 GetSkinInfo(player, weapon, iActiveItem)
 {
-	new skin;
+	new skin = -1;
 
 	switch (weapon)
 	{
