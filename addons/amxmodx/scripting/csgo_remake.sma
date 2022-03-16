@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.2"
+#define VERSION "2.2.1"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -392,6 +392,7 @@ new Array:g_aSkinCostMin;
 new Array:g_aDropSkin;
 new Array:g_aCraftSkin;
 new Array:g_aDustsSkin;
+new Array:g_aLockSkin;
 new Array:g_aTombola;
 new Array:g_aJackpotSkins;
 new Array:g_aJackpotUsers;
@@ -1124,7 +1125,7 @@ public plugin_precache()
 
 	new szBuffer[428], FileSections:iSection, iLine;
 	new szLeftpart[MAX_SKIN_NAME], szRightPart[24], iWeaponID[4], szNewModel[128], iDefaultSubmodel[8];
-	new weaponid[4], szWeaponName[MAX_SKIN_NAME], szWeaponModel[MAX_SKIN_NAME], weaponP[MAX_SKIN_NAME], weapontype[4], weaponchance[8], weaponcostmin[8], weapondusts[8], weaponsubmodel[8];
+	new weaponid[4], szWeaponName[MAX_SKIN_NAME], szWeaponModel[MAX_SKIN_NAME], weaponP[MAX_SKIN_NAME], weapontype[4], weaponchance[8], weaponcostmin[8], weapondusts[8], weaponsubmodel[8], szLocked[3];
 	new szPromocode[32], szPromocode_usage[6], szPromocode_gift[4];
 	new szChatSkip[20]
 	new Weapons[EnumSkinsMenuInfo];
@@ -1176,7 +1177,7 @@ public plugin_precache()
 				}
 				case secSkins:
 				{
-					parse(szBuffer, weaponid, charsmax(weaponid), szWeaponName, charsmax(szWeaponName), szWeaponModel, charsmax(szWeaponModel), weaponP, charsmax(weaponP), weaponsubmodel, charsmax(weaponsubmodel), weapontype, charsmax(weapontype), weaponchance, charsmax(weaponchance), weaponcostmin, charsmax(weaponcostmin), weapondusts, charsmax(weapondusts));
+					parse(szBuffer, weaponid, charsmax(weaponid), szWeaponName, charsmax(szWeaponName), szWeaponModel, charsmax(szWeaponModel), weaponP, charsmax(weaponP), weaponsubmodel, charsmax(weaponsubmodel), weapontype, charsmax(weapontype), weaponchance, charsmax(weaponchance), weaponcostmin, charsmax(weaponcostmin), weapondusts, charsmax(weapondusts), szLocked, charsmax(szLocked));
 
 					if (file_exists(szWeaponModel))
 					{
@@ -1203,6 +1204,7 @@ public plugin_precache()
 					ArrayPushCell(g_aSkinChance, str_to_num(weaponchance));
 					ArrayPushCell(g_aSkinCostMin, str_to_num(weaponcostmin));
 					ArrayPushCell(g_aDustsSkin, str_to_num(weapondusts));
+					ArrayPushCell(g_aLockSkin, str_to_num(szLocked));
 
 					switch (weapontype[0])
 					{
@@ -1217,6 +1219,7 @@ public plugin_precache()
 							g_iDropSkinNum += 1;
 						}
 					}
+
 					g_iSkinsNum += 1;
 				}
 				case secPromocodes:
@@ -1368,6 +1371,7 @@ public plugin_natives()
 	g_aDropSkin = ArrayCreate(1);
 	g_aCraftSkin = ArrayCreate(1);
 	g_aDustsSkin = ArrayCreate(1);
+	g_aLockSkin = ArrayCreate(1);
 	g_aTombola = ArrayCreate(1);
 	g_aJackpotSkins = ArrayCreate(1);
 	g_aJackpotUsers = ArrayCreate(1);
@@ -1434,6 +1438,7 @@ public plugin_end()
 	ArrayDestroy(g_aDropSkin);
 	ArrayDestroy(g_aCraftSkin);
 	ArrayDestroy(g_aDustsSkin);
+	ArrayDestroy(g_aLockSkin)
 	ArrayDestroy(g_aPromocodes);
 	ArrayDestroy(g_aPromocodesUsage);
 	ArrayDestroy(g_aPromocodesGift);
@@ -4953,11 +4958,17 @@ public _ShowItems(id)
 	new szSkin[48];
 	new num;
 	new type[2];
+	new iLocked;
 	for (new i; i < g_iSkinsNum; i++)
 	{
 		num = g_iUserSkins[id][i];
 		if (0 < num)
 		{
+			ArrayGetCell(g_aLockSkin, i)
+
+			if(iLocked == 1)
+				continue
+
 			ArrayGetString(g_aSkinName, i, szSkin, charsmax(szSkin));
 			ArrayGetString(g_aSkinType, i, type, 1);
 			formatex(temp, charsmax(temp), "\r%s \w| \y%L \r%s", szSkin, LANG_SERVER, "CSGOR_SM_PIECES", num, type[0] == 'c' ? "#" : "" );
@@ -5285,30 +5296,40 @@ public db_skins_menu_handler(id, menu, item)
 		_ShowMainMenu(id);
 		return _MenuExit(menu);
 	}
-	switch (g_iMenuType[id])
+
+	new Skin[48];
+	ArrayGetString(g_aSkinName, item, Skin, charsmax(Skin));
+
+	new iLocked = ArrayGetCell(g_aLockSkin, item);
+	
+	if(iLocked)
 	{
-		case 1:
+		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ITEM_LOCKED", Skin);
+	}
+	else
+	{
+		switch (g_iMenuType[id])
 		{
-			g_iUserSkins[id][item]--;
-			new Skin[48];
-			new DustsFromSkin = ArrayGetCell(g_aDustsSkin, item);
-			ArrayGetString(g_aSkinName, item, Skin, charsmax(Skin));
-			g_iUserDusts[id] += DustsFromSkin;
-			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_TRANSFORM", Skin, DustsFromSkin);
-			_Save(id);
-		}
-		case 2:
-		{
-			g_iUserSkins[id][item]--;
-			new Skin[48];
-			ArrayGetString(g_aSkinName, item, Skin, charsmax(Skin));
-			new sPrice = ArrayGetCell(g_aSkinCostMin, item);
-			new rest = sPrice / g_iCvars[iReturnPercent];
-			g_iUserPoints[id] += rest;
-			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DESTORY", Skin, rest);
-			_Save(id);
+			case 1:
+			{
+				g_iUserSkins[id][item]--;
+				new DustsFromSkin = ArrayGetCell(g_aDustsSkin, item);
+				g_iUserDusts[id] += DustsFromSkin;
+				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_TRANSFORM", Skin, DustsFromSkin);
+				_Save(id);
+			}
+			case 2:
+			{
+				g_iUserSkins[id][item]--;
+				new sPrice = ArrayGetCell(g_aSkinCostMin, item);
+				new rest = sPrice / g_iCvars[iReturnPercent];
+				g_iUserPoints[id] += rest;
+				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DESTORY", Skin, rest);
+				_Save(id);
+			}
 		}
 	}
+	
 	g_iMenuType[id] = 0;
 	_ShowDustbinMenu(id);
 	return _MenuExit(menu);
@@ -5461,6 +5482,7 @@ public gift_menu_handler(id, menu, item)
 					g_iGiftItem[id] = -1;
 					_ShowGiftMenu(id);
 				}
+
 				new gift[16];
 				switch (_item)
 				{
@@ -5604,13 +5626,20 @@ public _SelectItem(id)
 	new szSkin[48];
 	new num;
 	new type[2];
+	new iLocked;
 	for (new i; i < g_iSkinsNum; i++)
 	{
 		num = g_iUserSkins[id][i];
 		if (0 < num)
 		{
+			iLocked = ArrayGetCell(g_aLockSkin, i);
+
+			if(iLocked == 1)
+				continue
+
 			ArrayGetString(g_aSkinName, i, szSkin, charsmax(szSkin));
 			ArrayGetString(g_aSkinType, i, type, 1);
+
 			switch (type[0])
 			{
 				case 99:
@@ -6183,13 +6212,20 @@ public _SelectTradeItem(id)
 	new szSkin[48];
 	new num;
 	new type[2];
+	new iLocked;
 	for (new i; i < g_iSkinsNum; i++)
 	{
 		num = g_iUserSkins[id][i];
 		if (0 < num)
 		{
+			iLocked = ArrayGetCell(g_aLockSkin, i);
+
+			if(iLocked == 1)
+				continue
+
 			ArrayGetString(g_aSkinName, i, szSkin, charsmax(szSkin));
 			ArrayGetString(g_aSkinType, i, type, 1);
+
 			new applied[3];
 			switch (type[0])
 			{
