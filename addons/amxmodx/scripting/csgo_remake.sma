@@ -302,7 +302,9 @@ enum _:EnumCvars
 	iRoundEndSounds,
 	iCopyRight,
 	iCustomChat,
-	iAntiSpam
+	iAntiSpam,
+	szBonusValues[18],
+	iCheckBonusType
 }
 
 enum _:EnumRoundStats
@@ -851,6 +853,12 @@ public plugin_init()
 
 	pcvar = create_cvar("csgor_antispam_drop", "1", FCVAR_NONE, "(0|1) Enable / Disable anti spam in chat while opening / crafting skins.^n ATTENTION! If ^"csgor_show_dropcraft^" is ^"1^" anti spam is always active.", true, 0.0, true, 1.0)
 	bind_pcvar_num(pcvar, g_iCvars[iAntiSpam]);
+	
+	pcvar = create_cvar("csgor_bonus_random_range", "1 10 70 93", FCVAR_NONE, "(0|∞) Drop range for bonuses in the bonus menu.^nFirst two values: Min | Max for Cases, Dusts, Points drop.^nLast two values: Min | Max for Skins drop.", true, 0.0)
+	bind_pcvar_string(pcvar, g_iCvars[szBonusValues], charsmax(g_iCvars[szBonusValues]))
+
+	pcvar = create_cvar("csgor_bonus_check_type", "0", FCVAR_NONE, "(0|1) Bonus check type.^n0 - By IP^n1 - By SteamID", true, 0.0, true, 1.0)
+	bind_pcvar_num(pcvar, g_iCvars[iCheckBonusType])
 
 	AutoExecConfig(true, "csgo_remake", "csgor" );
 	
@@ -5065,39 +5073,102 @@ public _ShowBonusMenu(id)
 	log_to_file("csgor_debug_logs.log", "_ShowBonusMenu()")
 	#endif
 
+	new bool:bShow = false
+	new iTimestamp, szVal[ 10 ]
+	new szCheckData[35]
+	new iNum = g_iCvars[iCheckBonusType]
+
+	switch(iNum)
+	{
+		case 0:
+		{
+			copy(szCheckData, charsmax(szCheckData), g_szUserLastIP[id])
+		}
+		case 1:
+		{
+			copy(szCheckData, charsmax(szCheckData), g_szSteamID[id])
+		}
+	}
+
+	switch(g_iCvars[iSaveType])
+	{
+		case NVAULT:
+		{
+			if(!nvault_lookup( g_nVault , szCheckData , szVal , charsmax( szVal ) , iTimestamp ) || ( iTimestamp && ( ( get_systime() - iTimestamp ) >= ((60 * 60) * g_iCvars[iTimeDelete]))))
+			{
+				bShow = true
+			}
+		}
+		case MYSQL:
+		{
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `%s` = ^"%s^";", iNum == 0 ? "Last IP" : "SteamID", szCheckData)
+			
+			if(!SQL_Execute(iQuery))
+			{
+				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+				log_to_file("csgo_remake_errors.log", "SQL Error: %s", g_szSqlError)
+				SQL_FreeHandle(iQuery)
+			}
+
+			if(SQL_NumResults(iQuery) > 0)
+			{
+				for(new i; i < SQL_NumResults(iQuery); i++)
+				{
+					iTimestamp = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Bonus Timestamp"))
+
+					if(get_systime() - iTimestamp <= (60 * 60 * g_iCvars[iTimeDelete]))
+					{
+						new szQuery[128]
+						formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
+							SET `Bonus Timestamp`=^"%d^" \
+							WHERE `Name`=^"%s^";", iTimestamp, g_szName[id])
+
+						SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
+
+						bShow = false
+						break
+					}
+
+					bShow = true
+
+					SQL_NextRow(iQuery)
+				}
+			}
+		}
+	}
+
 	if(g_bLogged[id])
 	{
-		new iTimestamp , szVal[ 10 ];
-		if(!nvault_lookup( g_nVault , g_szName[id] , szVal , charsmax( szVal ) , iTimestamp ) || ( iTimestamp && ( ( get_systime() - iTimestamp ) >= ((60 * 60) * g_iCvars[iTimeDelete]))))
+		if(bShow)
 		{
-			new temp[64];
-			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_MENU");
-			new menu = menu_create(temp, "bonus_menu_handler");
-			new szItem[2];
-			szItem[1] = 0;
-			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_SCRAPS");
-			menu_additem(menu, temp, szItem);
-			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_CASES");
-			menu_additem(menu, temp, szItem);
-			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_POINTSM");
-			menu_additem(menu, temp, szItem);
-			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_SKIN");
-			menu_additem(menu, temp, szItem);
+			new temp[64]
+			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_MENU")
+			new menu = menu_create(temp, "bonus_menu_handler")
+			new szItem[2]
+			szItem[1] = 0
+			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_SCRAPS")
+			menu_additem(menu, temp, szItem)
+			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_CASES")
+			menu_additem(menu, temp, szItem)
+			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_POINTSM")
+			menu_additem(menu, temp, szItem)
+			formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_BONUS_SKIN")
+			menu_additem(menu, temp, szItem)
 			
-			_DisplayMenu(id, menu);
+			_DisplayMenu(id, menu)
 		}
 		else
 		{
-			client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_TAKEN", UnixTimeToString(iTimestamp));
-			return PLUGIN_HANDLED;
+			client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_TAKEN", UnixTimeToString(iTimestamp))
+			return PLUGIN_HANDLED
 		}
 	}
 	else 
 	{
-		client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_NOT_LOGGED");
-		return PLUGIN_HANDLED;
+		client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_NOT_LOGGED")
+		return PLUGIN_HANDLED
 	}
-	return PLUGIN_HANDLED;
+	return PLUGIN_HANDLED
 }
 
 public bonus_menu_handler(id, menu, item)
@@ -5115,49 +5186,67 @@ public bonus_menu_handler(id, menu, item)
 		return _MenuExit(menu);
 	}
 	
+	new szMin[8], szMax[8], szSkinMin[8], szSkinMax[8]
+	parse(g_iCvars[szBonusValues], szMin, charsmax(szMin), szMax, charsmax(szMax), szSkinMin, charsmax(szSkinMin), szSkinMax, charsmax(szSkinMax))
+
+	new rand = random_num(str_to_num(szMin), str_to_num(szMax))
+	new skinRand = random_num(str_to_num(szSkinMin), str_to_num(szSkinMax))
+	new bool:bBonus
+
 	switch(item)
 	{
 		case 0:
 		{
-			new name[33];
-			get_user_name(id, name, charsmax(name) );
-			nvault_set( g_nVault , name , "bonus_csgo" );
-			new rand = random_num(5, 20);
-			g_iUserDusts[id] += rand;
-			client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_DUSTS", rand);
+			bBonus = true
+			g_iUserDusts[id] += rand
+			client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_DUSTS", rand)
 		}
 		case 1:
 		{
-			new name[33];
-			get_user_name(id,name,charsmax(name));
-			nvault_set( g_nVault , name , "bonus_csgo" );
-			new rand1 = random_num(1, 10);
-			g_iUserCases[id] += rand1;
-			g_iUserKeys[id] += rand1;
-			if(rand1 == 1)
-				client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_CASE", rand1, rand1);
+			bBonus = true
+
+			g_iUserCases[id] += rand
+			g_iUserKeys[id] += rand
+			if(rand == 1)
+				client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_CASE", rand, rand)
 			else
-				client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_CASES", rand1, rand1);
+				client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_CASES", rand, rand)
 		}
 		case 2:
 		{
-			new name[33];
-			get_user_name(id,name,charsmax(name));
-			nvault_set( g_nVault , name , "bonus_csgo" );
-			new rand2 = random_num(1, 20);
-			g_iUserPoints[id] += rand2;
-			client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_POINTS", rand2);
+			bBonus = true 
+
+			g_iUserPoints[id] += rand
+			client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_POINTS", rand)
 		}
 		case 3:
 		{
-			new name[33];
-			get_user_name(id,name,charsmax(name));
-			nvault_set( g_nVault , name , "bonus_csgo" );
-			new random = random_num(70, 93);
-			new szSkin[48];
-			ArrayGetString(g_aSkinName, random, szSkin, charsmax(szSkin));
-			g_iUserSkins[id][random]++;
-			client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_SKIN", szSkin);
+			bBonus = true 
+
+			new szSkin[48]
+			ArrayGetString(g_aSkinName, skinRand, szSkin, charsmax(szSkin))
+			g_iUserSkins[id][skinRand]++
+			client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_BONUS_GOT_SKIN", szSkin)
+		}
+	}
+
+	if(bBonus)
+	{
+		switch(g_iCvars[iSaveType])
+		{
+			case NVAULT:
+			{
+				nvault_set( g_nVault, g_iCvars[iCheckBonusType] == 0 ? g_szUserLastIP[id] : g_szSteamID[id], "bonus_csgo" )
+			}
+			case MYSQL:
+			{
+				new szQuery[128]
+				formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
+					SET `Bonus Timestamp`=^"%d^" \
+					WHERE `Name`=^"%s^";", get_systime(), g_szName[id])
+
+				SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
+			}
 		}
 	}
 	return PLUGIN_HANDLED;
@@ -10332,7 +10421,7 @@ _CalcItemPrice(item, &min, &max)
 	}
 }
 
-IsTaken(id, iTimestamp)
+IsTaken(id, &iTimestamp)
 {
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "IsTaken()")
@@ -10342,10 +10431,10 @@ IsTaken(id, iTimestamp)
 	{
 		case NVAULT:
 		{
-			new g_szData[MAX_SKINS * 3 + 94];
+			new g_szData[24];
 			if (nvault_lookup(g_Vault, g_szName[id], g_szData, charsmax(g_szData), iTimestamp))
 			{
-				return iTimestamp;
+				return PLUGIN_HANDLED;
 			}
 		}
 		case MYSQL:
@@ -10363,7 +10452,7 @@ IsTaken(id, iTimestamp)
 
 			SQL_FreeHandle(iQuery);
 
-			return iTimestamp;
+			return PLUGIN_HANDLED;
 		}
 	}
 	return PLUGIN_CONTINUE;
