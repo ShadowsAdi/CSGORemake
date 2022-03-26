@@ -1,3 +1,6 @@
+# Thanks to https://github.com/wopox1337 https://github.com/ChatAdditions/ChatAdditions_AMXX/blob/master/.github/workflows/CI.yml
+name: CI
+
 on:
   push:
     branches: [master]
@@ -11,7 +14,7 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: "Build"
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.declare_sha.outputs.sha }}
@@ -40,6 +43,7 @@ jobs:
           SHA=$(git rev-parse --short HEAD)
           echo "COMMIT_SHA=${SHA}" >> $GITHUB_ENV
           echo "::set-output name=sha::$SHA"
+          echo "::set-output name=semver::${{ steps.semver_parser.outputs.fullversion }}"
       - name: Setup latest ReAPI includes
         env:
           REPO: "s1lentq/reapi"
@@ -54,12 +58,6 @@ jobs:
             xargs wget
           7z x *.zip
           echo "REAPI_INCLUDE_PATH=$(pwd)/addons/amxmodx/scripting/include" >> $GITHUB_ENV
-      - name: Update versions for plugins (release)
-        working-directory: addons/amxmodx/scripting/include/
-        if: |
-          github.event_name == 'release' &&
-          github.event.action == 'published' &&
-          startsWith(github.ref, 'refs/tags/')
 
       - name: Setup AMXXPawn Compiler
         uses: wopox1337/setup-amxxpawn@v1
@@ -102,7 +100,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v2
         with:
-          name: CSGORemake-${{needs.build.outputs.sha}}
+         name: CSGORemake-${{needs.build.outputs.sha}}
 
       - name: Packaging binaries
         id: packaging
