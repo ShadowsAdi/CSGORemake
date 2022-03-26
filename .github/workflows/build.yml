@@ -74,9 +74,7 @@ jobs:
           do
             amxxfile="`echo $sourcefile | sed -e 's/\.sma$/.amxx/'`"
             echo -n "Compiling $sourcefile ... "
-            amxxpc $sourcefile -o"../plugins/$amxxfile" \
-              -i "include" \
-              -i "$REAPI_INCLUDE"
+            amxxpc $sourcefile -o"../plugins/$amxxfile" -i"include" -i"$REAPI_INCLUDE"
           done
       - name: Move files
         run: |
