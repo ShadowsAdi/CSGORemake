@@ -657,7 +657,7 @@ new szSprite[][] =
 	"number_9",
 	"dmg_rad"
 };	
-
+ 
 #if defined HUD_POS
 new Float:HUD_POS_X = 0.02;
 new Float:HUD_POS_Y = 0.90;
