@@ -4958,17 +4958,11 @@ public _ShowItems(id)
 	new szSkin[48];
 	new num;
 	new type[2];
-	new iLocked;
 	for (new i; i < g_iSkinsNum; i++)
 	{
 		num = g_iUserSkins[id][i];
 		if (0 < num)
 		{
-			ArrayGetCell(g_aLockSkin, i)
-
-			if(iLocked == 1)
-				continue
-
 			ArrayGetString(g_aSkinName, i, szSkin, charsmax(szSkin));
 			ArrayGetString(g_aSkinType, i, type, 1);
 			formatex(temp, charsmax(temp), "\r%s \w| \y%L \r%s", szSkin, LANG_SERVER, "CSGOR_SM_PIECES", num, type[0] == 'c' ? "#" : "" );
@@ -5013,6 +5007,16 @@ public item_menu_handler(id, menu, item)
 	}
 	else
 	{
+		new iLocked;
+		iLocked = ArrayGetCell(g_aLockSkin, item)
+
+		if(iLocked)
+		{
+			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ITEM_LOCKED", Skin)
+			_ShowMarketMenu(id)
+			return _MenuExit(menu)
+		}
+
 		new szItem[32];
 		g_iUserSellItem[id] = item;
 		_GetItemName(item, szItem, charsmax(szItem));
