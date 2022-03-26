@@ -1017,12 +1017,6 @@ public DetectSaveType()
 		}
 		case MYSQL:
 		{
-			g_nVault = nvault_open("bonus_vault");
-			if(g_nVault == INVALID_HANDLE)
-			{
-				set_fail_state("%s Error opening bonus_vault", CSGO_TAG);
-			}
-
 			g_hSqlTuple = SQL_MakeDbTuple(g_iCvars[szSqlHost], g_iCvars[szSqlUsername], g_iCvars[szSqlPassword], g_iCvars[szSqlDatabase]);
 
 			new iError;
@@ -1477,11 +1471,6 @@ public plugin_end()
 		}
 		case MYSQL:
 		{
-			if(g_iCvars[iTimeDelete])
-			{
-				nvault_prune(g_nVault,0,get_systime() - (60 * 60 * g_iCvars[iTimeDelete]));
-			}
-			nvault_close(g_nVault);
 			SQL_FreeHandle(g_hSqlTuple);
 			SQL_FreeHandle(g_iSqlConnection);
 		}
