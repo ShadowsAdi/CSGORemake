@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.2.1"
+#define VERSION "2.2.2"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
