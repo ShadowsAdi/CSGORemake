@@ -1,4 +1,6 @@
-# Thanks to https://github.com/wopox1337 https://github.com/ChatAdditions/ChatAdditions_AMXX/blob/master/.github/workflows/CI.yml
+# Thanks to https://github.com/wopox1337 
+# https://github.com/ChatAdditions/ChatAdditions_AMXX/blob/master/.github/workflows/CI.yml
+
 name: CI
 
 on:
