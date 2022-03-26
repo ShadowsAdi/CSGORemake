@@ -1,4 +1,4 @@
-# CSGO Remake V 2.12
+# CSGO Remake V 2.2.2
 <img align="center" src="https://i.imgur.com/ByWZCEh.jpg" alt="CS:GO Remake"/>
 
 Mod inspired by the popular Counter Strike: Global Offensive.
@@ -62,6 +62,10 @@ Roulette system ( players can play roulette like on gambling sites ).
 Coinflip system ( players can bet their skins with other players and the winner gets the opponent's skin ).
 
 Promocode system ( promocodes can be setted up in config file ).
+
+Bonus can be taken only once in defined time, it also checks for duplicate account while using bonus.
+
+Skin locking method. You can lock certain skins from being traded, gifted, dusted or sold.
 
 ## Commands
 
