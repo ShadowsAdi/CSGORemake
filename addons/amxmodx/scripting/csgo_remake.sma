@@ -5007,19 +5007,19 @@ public item_menu_handler(id, menu, item)
 	}
 	else
 	{
+		new szItem[32];
+		_GetItemName(item, szItem, charsmax(szItem));
 		new iLocked;
 		iLocked = ArrayGetCell(g_aLockSkin, item)
 
 		if(iLocked)
 		{
-			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ITEM_LOCKED", Skin)
+			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ITEM_LOCKED", szItem)
 			_ShowMarketMenu(id)
 			return _MenuExit(menu)
 		}
-
-		new szItem[32];
+		
 		g_iUserSellItem[id] = item;
-		_GetItemName(item, szItem, charsmax(szItem));
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_IM_SELECT", szItem);
 		client_cmd(id, "messagemode ItemPrice");
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_IM_SET_PRICE");
