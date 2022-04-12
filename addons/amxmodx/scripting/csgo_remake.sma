@@ -1359,7 +1359,7 @@ public plugin_natives()
 		set_fail_state("%s File not found: ...%s", CSGO_TAG, g_szConfigFile);
 	
 	register_library("csgo_remake");
-	g_aRankName = ArrayCreate(32);
+	g_aRankName = ArrayCreate(MAX_RANK_NAME);
 	g_aRankKills = ArrayCreate(1);
 	g_aDefaultSubmodel = ArrayCreate(1);
 	g_aSkinWeaponID = ArrayCreate(1);
@@ -2372,7 +2372,7 @@ public task_HUD(id)
 
 	if (g_bLogged[id]) 
 	{
-		new szRank[32];
+		new szRank[MAX_RANK_NAME];
 
 		switch(g_iCvars[iShowHUD])
 		{
@@ -3275,7 +3275,7 @@ public _ShowMainMenu(id)
 	}
 
 	new userRank = g_iUserRank[id];
-	new szRank[32];
+	new szRank[MAX_RANK_NAME];
 	ArrayGetString(g_aRankName, userRank, szRank, charsmax(szRank));
 	if (g_iRanksNum - 1 > userRank)
 	{
@@ -5909,7 +5909,7 @@ ProcessChat(id, szMessage[128], bool:bAllChat)
 	
 	if(g_bLogged[id])
 	{
-		new szRank[32];
+		new szRank[MAX_RANK_NAME];
 		ArrayGetString(g_aRankName, g_iUserRank[id], szRank, charsmax(szRank));
 		new len = strlen(g_szUserPrefix[id]);
 		new tag[20];
@@ -7879,9 +7879,12 @@ public ev_DeathMsg()
 		{
 			g_iUserRank[killer]++;
 			levelup = true;
-			new szRank[32];
+
+			new szRank[MAX_RANK_NAME];
 			ArrayGetString(g_aRankName, g_iUserRank[killer], szRank, charsmax(szRank));
+
 			client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_LEVELUP_ALL", g_szName[killer], szRank);
+
 			ExecuteForward(g_iForwards[ user_level_up ], g_iForwardResult, killer, szRank, g_iUserRank[killer]);
 		}
 	}
@@ -8295,10 +8298,14 @@ public concmd_setrank(id, level, cid)
 	{
 		g_iUserKills[target] = 0;
 	}
+
 	_Save(target);
-	new szRank[32];
+
+	new szRank[MAX_RANK_NAME];
 	ArrayGetString(g_aRankName, g_iUserRank[target], szRank, charsmax(szRank));
+
 	console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_SET_RANK", arg1, szRank);
+
 	client_print_color(target, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SET_RANK", g_szName[id], szRank);
 
 	return PLUGIN_HANDLED;
@@ -8639,11 +8646,21 @@ public native_get_user_rank(iPluginID, iParamNum)
 		return -1;
 	}
 
-	new rank = g_iUserRank[id];
-	new szRank[32];
-	ArrayGetString(g_aRankName, rank, szRank, charsmax(szRank));
+	new szRank[MAX_RANK_NAME]
+	new rank = -2
+
+	if(g_bLogged[id])
+	{
+		rank = g_iUserRank[id];
+		ArrayGetString(g_aRankName, rank, szRank, charsmax(szRank));
+	}
+	else
+	{
+		formatex(szRank, charsmax(szRank), "%L", LANG_SERVER, "CSGOR_NOT_LOGGED_CHAT")
+	}
 
 	set_string(2, szRank, get_param(3));
+
 	return rank;
 }
 
@@ -9281,7 +9298,7 @@ public concmd_finddata(id, level, cid)
 
 	new bool:bFound;
 
-	new szRank[32];
+	new szRank[MAX_RANK_NAME];
 	new userData[6];
 	new password[32];
 
@@ -9510,7 +9527,7 @@ public concmd_getinfo(id, level, cid)
 			}
 			else
 			{
-				new Name[32];
+				new Name[MAX_RANK_NAME];
 				ArrayGetString(g_aRankName, num, Name, charsmax(Name));
 				new Kills = ArrayGetCell(g_aRankKills, num);
 				console_print(id, "%s Information about RANK with index: %d", CSGO_TAG, num);
