@@ -11,6 +11,8 @@
 
 #define MAX_SKIN_NAME 64
 
+#define MAX_RANK_NAME 48
+
 enum _:FileSections
 {
     secRanks = 1,
@@ -105,7 +107,7 @@ native csgor_set_user_cases(id, amount);
  * @param output    Output buffer for rang name.
  * @param len       Max length of a output buffer.
  *
- * @return      Player Rank ID. -1 on error.
+ * @return      Player Rank ID. -1 on error. -2 if the player is not logged in.
  */
 native csgor_get_user_rank(id, output[], len);
 
