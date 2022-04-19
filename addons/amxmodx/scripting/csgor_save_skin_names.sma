@@ -106,7 +106,7 @@ public csgor_user_logging_in(id)
 	{
 		if(i == CSW_HEGRENADE || i == CSW_SMOKEGRENADE || i == CSW_FLASHBANG || i == CSW_GLOCK /* Unused by game. */ || i == CSW_C4) continue
 
-		csgo_get_user_skin(id, i, szSkinName[i][0], charsmax(szSkinName[][]))
+		csgor_get_user_skin(id, i, szSkinName[i][0], charsmax(szSkinName[][]))
 		csgor_get_user_stattrack(id, i, szSkinName[i][1], charsmax(szSkinName[][]))
 	}
 
