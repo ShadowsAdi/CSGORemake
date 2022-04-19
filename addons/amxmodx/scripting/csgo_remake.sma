@@ -1414,10 +1414,11 @@ public plugin_natives()
 	register_native("csgor_set_user_statt_kills", "native_set_user_stattrack_kills");
 	register_native("csgor_get_user_stattrack", "native_get_user_stattrack");
 	register_native("csgor_set_random_stattrack", "native_set_random_stattrack");
-	register_native("csgo_get_user_body", "native_csgo_get_user_body");
-	register_native("csgo_get_config_location", "native_csgo_get_config_location");
-	register_native("csgo_get_user_skin", "native_csgo_get_user_skin");
-	register_native("csgo_get_database_data", "native_csgo_get_database_data");
+	register_native("csgor_get_user_body", "native_csgo_get_user_body");
+	register_native("csgor_get_config_location", "native_csgo_get_config_location");
+	register_native("csgor_get_user_skin", "native_csgo_get_user_skin");
+	register_native("csgor_get_database_data", "native_csgo_get_database_data");
+	register_native("csgor_get_rank_name", "native_get_rank_name")
 }
 
 public plugin_end()
@@ -9280,6 +9281,24 @@ public native_csgo_get_database_data(iPluginID, iParamNum)
 	set_string(7, g_iCvars[szSqlDatabase], get_param(8))
 
 	return 1;
+}
+
+public native_get_rank_name(iPluginID, iParamNum)
+{
+	if(iParamNum != 2)
+	{
+		log_error(AMX_ERR_NATIVE, "%s Invalid param num ! Valid: (iRankNum, szBuffer[])", CSGO_TAG)
+		return -1
+	}
+
+	new iRank = get_param(1)
+	new szRank[MAX_RANK_NAME]
+
+	ArrayGetString(g_aRankName, iRank, szRank, charsmax(szRank))
+
+	set_string(2, szRank, charsmax(szRank))
+
+	return 1
 }
 
 public concmd_finddata(id, level, cid)

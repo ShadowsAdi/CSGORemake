@@ -50,7 +50,7 @@ public csgor_on_configs_executed(iSuccess)
 			return
 		}
 
-		csgo_get_database_data(g_eSqlConnection[szSqlHost], charsmax(g_eSqlConnection[szSqlHost]), g_eSqlConnection[szSqlUsername], \
+		csgor_get_database_data(g_eSqlConnection[szSqlHost], charsmax(g_eSqlConnection[szSqlHost]), g_eSqlConnection[szSqlUsername], \
 		 charsmax(g_eSqlConnection[szSqlUsername]), g_eSqlConnection[szSqlPassword], charsmax(g_eSqlConnection[szSqlPassword]), \
 		 g_eSqlConnection[szSqlDatabase], charsmax(g_eSqlConnection[szSqlDatabase]))
 
