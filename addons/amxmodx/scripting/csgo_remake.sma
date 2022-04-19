@@ -304,7 +304,8 @@ enum _:EnumCvars
 	iCustomChat,
 	iAntiSpam,
 	szBonusValues[18],
-	iCheckBonusType
+	iCheckBonusType,
+	szUserInfoField[24]
 }
 
 enum _:EnumRoundStats
@@ -861,6 +862,9 @@ public plugin_init()
 	pcvar = create_cvar("csgor_bonus_check_type", "0", FCVAR_NONE, "(0|1) Bonus check type.^n0 - By IP^n1 - By SteamID", true, 0.0, true, 1.0)
 	bind_pcvar_num(pcvar, g_iCvars[iCheckBonusType])
 
+	pcvar = create_cvar("csgor_userinfo_field", "_csgorpw", FCVAR_NONE, "Userinfo field to check / store player's account password")
+	bind_pcvar_string(pcvar, g_iCvars[szUserInfoField], charsmax(g_iCvars[szUserInfoField]))
+
 	AutoExecConfig(true, "csgo_remake", "csgor" );
 	
 	register_cvar("csgore_version", VERSION, FCVAR_SERVER|FCVAR_EXTDLL|FCVAR_UNLOGGED|FCVAR_SPONLY);
@@ -943,6 +947,7 @@ public plugin_init()
 	register_clcmd("say /acceptcoin", "clcmd_say_accept_coin");
 	register_clcmd("say /denycoin", "clcmd_say_deny_coin");
 	register_clcmd("say /bonus", "clcmd_say_bonus");
+	register_clcmd("say /savepass", "clcmd_say_savepass");
 	register_clcmd("inspect", "inspect_weapon");
 
 	register_impulse(100, "inspect_weapon");
@@ -1508,6 +1513,7 @@ public client_putinserver(id)
 	}
 
 	ResetData(id);
+	CheckUserInfo(id);
 }
 
 ResetData(id, bool:bWithoutPassword = false)
@@ -1584,6 +1590,11 @@ ResetData(id, bool:bWithoutPassword = false)
 	}
 
 	DestroyTask(id + TASK_HUD);
+}
+
+public CheckUserInfo(id)
+{
+	get_user_info(id, g_iCvars[szUserInfoField], g_szUserPassword[id], charsmax(g_szUserPassword[]))
 }
 
 public task_Info(id)
@@ -6381,6 +6392,24 @@ public tsi_menu_handler(id, menu, item)
 		}
 	}
 	return _MenuExit(menu);
+}
+
+public clcmd_say_savepass(id)
+{
+	if(g_bLogged[id])
+	{
+		new szTemp[64]
+		formatex(szTemp, charsmax(szTemp), "setinfo ^"%s^" ^"%s^"", g_iCvars[szUserInfoField], g_szUserPassword[id])
+		client_cmd(id, szTemp)
+
+		client_print_color(id, id, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_PASSWORD_SAVED", szTemp)
+	}
+	else 
+	{
+		client_print_color(id, id, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_MUST_LOGIN")
+	}
+
+	return PLUGIN_HANDLED
 }
 
 public clcmd_say_accept(id)

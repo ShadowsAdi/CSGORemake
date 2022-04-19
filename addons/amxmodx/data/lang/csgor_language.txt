@@ -291,6 +291,7 @@ CSGOR_COINFLIP_YOU_LOSE_X_WITH_X = ^1Ai pierdut Coinflip-ul cu ^4%s^1, skin-ul p
 CSGOR_NO_ACTIVE_SKIN = Nu ai niciun skin in mana.
 CSGOR_NO_ACTIVE_SKIN_HUD = Niciun Skin Activ.
 CSGOR_ITEM_LOCKED = Skin-ul ^4%s^1 este blocat. Acesta nu poate fi dat la pulberi, schimb sau vandut!
+CSGOR_PASSWORD_SAVED = Parola ta a fost ^4salvata^1! Daca nu este salvata, tasteaza aceasta comanda in consola^4 %s^1.
 
 CSGOR_GIVEAWAY_MENU = GiveAway
 CSGOR_GIVEAWAY_SKIN = Skin \r[%s]
@@ -596,6 +597,7 @@ CSGOR_COINFLIP_YOU_LOSE_X_WITH_X = ^1You've lost the Coinflip aganist ^4%s^1, sk
 CSGOR_NO_ACTIVE_SKIN = You have no skin in your hand.
 CSGOR_NO_ACTIVE_SKIN_HUD = No Active Skin.
 CSGOR_ITEM_LOCKED = Skin ^4%s^1 is locked and can't be dusted, sold or gifted!
+CSGOR_PASSWORD_SAVED = Your password has been ^4saved^1! If it didn't saved, insert this into your console: ^4%s^1.
 
 CSGOR_GIVEAWAY_MENU = GiveAway
 CSGOR_GIVEAWAY_SKIN = Skin \r[%s]
