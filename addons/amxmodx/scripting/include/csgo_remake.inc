@@ -341,7 +341,7 @@ native csgor_set_random_stattrack(id, amount);
  * @noreturn
  *
  */
-native csgo_get_config_location(szLocation[64]);
+native csgor_get_config_location(szLocation[64]);
 
 /**
  * Stores database connection information into strings.
@@ -360,7 +360,18 @@ native csgo_get_config_location(szLocation[64]);
  * 
  * @return              -1 if invalid parameters num is passed, 1 on success.
  */
-native csgo_get_database_data(szHostname[], iHostLen, szUsername[], iUserLen, szPassword[], iPassLen, szDatabase[], iDbLen)
+native csgor_get_database_data(szHostname[], iHostLen, szUsername[], iUserLen, szPassword[], iPassLen, szDatabase[], iDbLen)
+
+/**
+ * Converts Rank ID to Rank name. 
+ * 
+ * @param iRankNum      Rank index.
+ * @param szBuffer      Buffer to copy rank name.
+ *
+ * @return              -1 on error, 1 on success.
+ *
+ */
+native csgor_get_rank_name(iRankNum, szBuffer[])
 
 /**
  * Called when a player log in account.
