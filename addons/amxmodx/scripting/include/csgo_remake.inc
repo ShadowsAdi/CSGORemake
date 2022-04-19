@@ -320,7 +320,7 @@ native csgor_get_user_stattrack(id, WeaponID, skinname[], len);
  * @return              -1 if player is not within range, if player is not logged into his account or WeaponID is not within range.
  *
  */
-native csgo_get_user_skin(id, WeaponID, skinname[], len);
+native csgor_get_user_skin(id, WeaponID, skinname[], len);
 
 /**
  * Sets a random StatTrack skin by given amount.
