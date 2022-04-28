@@ -672,6 +672,8 @@ new g_iMaxPlayers;
 const PRIMARY_WEAPONS_BIT_SUM = (1<<CSW_SCOUT)|(1<<CSW_XM1014)|(1<<CSW_MAC10)|(1<<CSW_AUG)|(1<<CSW_UMP45)|(1<<CSW_SG550)|(1<<CSW_GALIL)|(1<<CSW_FAMAS)|(1<<CSW_AWP)|(1<<CSW_MP5NAVY)|(1<<CSW_M249)|(1<<CSW_M3)|(1<<CSW_M4A1)|(1<<CSW_TMP)|(1<<CSW_G3SG1)|(1<<CSW_SG552)|(1<<CSW_AK47)|(1<<CSW_P90);
 const SECONDARY_WEAPONS_BIT_SUM = (1<<CSW_P228)|(1<<CSW_ELITE)|(1<<CSW_FIVESEVEN)|(1<<CSW_USP)|(1<<CSW_GLOCK18)|(1<<CSW_DEAGLE);
 
+new g_szData[MAX_SKINS * 5 + 94];
+
 public plugin_init()
 {
 	#if defined DEBUG
@@ -2498,7 +2500,6 @@ public _LoadData(id)
 	{
 		case NVAULT:
 		{
-			static g_szData[MAX_SKINS * 5 + 94];
 			new Timestamp;
 			if (nvault_lookup(g_Vault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
 			{
@@ -2510,7 +2511,7 @@ public _LoadData(id)
 				strtok(g_szData, szBuffer, charsmax(szBuffer), g_szData, charsmax(g_szData), '*');
 				for (new i; i < sizeof userData; i++)
 				{
-					strtok(szBuffer, userData[i], charsmax(userData), szBuffer, charsmax(szBuffer), ',');
+					strtok(szBuffer, userData[i], charsmax(userData[]), szBuffer, charsmax(szBuffer), ',');
 				}
 				g_iUserPoints[id] = str_to_num(userData[0]);
 				g_iUserDusts[id] = str_to_num(userData[1]);
@@ -2519,9 +2520,10 @@ public _LoadData(id)
 				g_iUserKills[id] = str_to_num(userData[4]);
 				g_iUserRank[id] = str_to_num(userData[5]);
 
-				static skinBuffer[MAX_SKINS];
-				skinBuffer[0] = 0;
+				new skinBuffer[MAX_SKINS];
+
 				new temp[4];
+
 				strtok(g_szData, g_szData, charsmax(g_szData), skinBuffer, charsmax(skinBuffer), '#');
 				for (new j = 1; j <= CSW_P90 && skinBuffer[0] && strtok(skinBuffer, temp, charsmax(temp), skinBuffer, charsmax(skinBuffer), ','); j++)
 				{
@@ -2537,8 +2539,8 @@ public _LoadData(id)
 			if(nvault_lookup(g_sVault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
 			{
 				new weaponData[8];
-				static skinBuffer[MAX_SKINS * 2 + 94];
-				static killcount[MAX_SKINS * 2];
+				new skinBuffer[MAX_SKINS * 2 + 94];
+				new killcount[MAX_SKINS * 2];
 				new iLine = 0;
 				skinBuffer[0] = 0;
 				killcount[0] = 0;
@@ -2642,7 +2644,7 @@ public _LoadData(id)
 			SQL_FreeHandle(iQuery);
 		}
 	}
-	
+
 	return PLUGIN_HANDLED;
 }
 
@@ -2740,12 +2742,12 @@ public _LoadSkins(id)
 
 public _SaveData(id)
 {
-	static g_iWeapszBuffer[MAX_SKINS * 2 + 3];
-	static skinBuffer[MAX_SKINS * 2];
-	static stattszBuffer[MAX_SKINS * 2];
+	new g_iWeapszBuffer[MAX_SKINS * 2 + 3];
+	new skinBuffer[MAX_SKINS * 2];
+	new szBuffer[MAX_SKINS * 2];
 	g_iWeapszBuffer[0] = 0;
 	skinBuffer[0] = 0;
-	stattszBuffer[0] = 0;
+	szBuffer[0] = 0;
 	formatex(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%d", g_iUserSkins[id]);
 
 	for (new i = 1; i < MAX_SKINS; i++)
@@ -2754,19 +2756,18 @@ public _SaveData(id)
 	}
 
 	formatex(skinBuffer, charsmax(skinBuffer), "%d", g_iUserSelectedSkin[id][1]);
-	formatex(stattszBuffer, charsmax(stattszBuffer), "%d", g_iStattrackWeap[id][iSelected][1]);
+	formatex(szBuffer, charsmax(szBuffer), "%d", g_iStattrackWeap[id][iSelected][1]);
 
 	for (new i = 2; i <= CSW_P90; i++)
 	{
 		format(skinBuffer, charsmax(skinBuffer), "%s,%d", skinBuffer, g_iUserSelectedSkin[id][i]);
-		format(stattszBuffer, charsmax(stattszBuffer), "%s,%d", stattszBuffer, g_iStattrackWeap[id][iSelected][i]);
+		format(szBuffer, charsmax(szBuffer), "%s,%d", szBuffer, g_iStattrackWeap[id][iSelected][i]);
 	}
 
 	switch(g_iCvars[iSaveType])
 	{
 		case NVAULT:
 		{
-			static g_szData[MAX_SKINS * 3 + 94];
 			g_szData[0] = 0;
 			new infoBuffer[MAX_SKIN_NAME];
 			formatex(infoBuffer, charsmax(infoBuffer), "%s=%s,%s;%d,%d,%d,%d,%d,%d", g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id]);
@@ -2774,12 +2775,11 @@ public _SaveData(id)
 			formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoBuffer, g_iWeapszBuffer, skinBuffer);
 			nvault_set(g_Vault, g_szName[id], g_szData);
 
-			task_update_stattrack(id, stattszBuffer, .iType = NVAULT);
+			task_update_stattrack(id, szBuffer, .iType = NVAULT);
 		}
 		case MYSQL:
 		{
-			static szQuery[MAX_SKINS * 3 + 94];
-			szQuery[0] = 0;
+			new szQuery[MAX_SKINS * 3 + 94];
 			new iTimestamp;
 			IsTaken(id, iTimestamp);
 			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
@@ -2804,7 +2804,7 @@ public _SaveData(id)
 			SET `Skins`=^"%s^", \
 			`Selected Stattrack`=^"%s^", \
 			`Selected Skins`=^"%s^" \
-			WHERE `Name`=^"%s^";", g_iWeapszBuffer, stattszBuffer, skinBuffer, g_szName[id]);
+			WHERE `Name`=^"%s^";", g_iWeapszBuffer, szBuffer, skinBuffer, g_szName[id]);
 
 			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
@@ -2822,8 +2822,8 @@ public task_update_stattrack(id, szPassed[MAX_SKINS * 2], iType)
 	log_to_file("csgor_debug_logs.log", "task_update_stattrack()")
 	#endif
 
-	static szQuery[MAX_SKINS * 2 + 94];
-	static g_iStattrack[MAX_SKINS * 2 + 3];
+	new szQuery[MAX_SKINS * 2 + 94];
+	new g_iStattrack[MAX_SKINS * 2 + 3];
 	g_iStattrack[0] = 0;
 	szQuery[0] = 0;
 	formatex(g_iStattrack, charsmax(g_iStattrack), "%d", g_iStattrackWeap[id][iWeap]);
@@ -2875,8 +2875,8 @@ public task_update_stattrack_kills(id, szPassed[MAX_SKINS * 2 + 94], iType)
 	log_to_file("csgor_debug_logs.log", "task_update_stattrack_kills()")
 	#endif
 
-	static szQuery[MAX_SKINS * 4 + 94];
-	static g_iStattKills[MAX_SKINS * 2 + 3];
+	new szQuery[MAX_SKINS * 4 + 94];
+	new g_iStattKills[MAX_SKINS * 2 + 3];
 	g_iStattKills[0] = 0;
 	szQuery[0] = 0;
 
@@ -10372,7 +10372,6 @@ bool:IsRegistered(id)
 	{
 		case NVAULT:
 		{
-			static g_szData[MAX_SKINS * 3 + 94];
 			g_szData[0] = 0;
 			new Timestamp;
 			if (nvault_lookup(g_Vault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
