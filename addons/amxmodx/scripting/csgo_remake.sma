@@ -2510,7 +2510,7 @@ public _LoadData(id)
 				strtok(g_szData, szBuffer, charsmax(szBuffer), g_szData, charsmax(g_szData), '*');
 				for (new i; i < sizeof userData; i++)
 				{
-					strtok(szBuffer, userData[i], charsmax(userData), szBuffer, charsmax(szBuffer), ',');
+					strtok(szBuffer, userData[i], charsmax(userData[]), szBuffer, charsmax(szBuffer), ',');
 				}
 				g_iUserPoints[id] = str_to_num(userData[0]);
 				g_iUserDusts[id] = str_to_num(userData[1]);
