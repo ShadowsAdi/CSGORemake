@@ -2510,7 +2510,7 @@ public _LoadData(id)
 				strtok(g_szData, szBuffer, charsmax(szBuffer), g_szData, charsmax(g_szData), '*');
 				for (new i; i < sizeof userData; i++)
 				{
-					strtok(szBuffer, userData[i], charsmax(userData), szBuffer, charsmax(szBuffer), ',');
+					strtok(szBuffer, userData[i], charsmax(userData[]), szBuffer, charsmax(szBuffer), ',');
 				}
 				g_iUserPoints[id] = str_to_num(userData[0]);
 				g_iUserDusts[id] = str_to_num(userData[1]);
@@ -2772,6 +2772,7 @@ public _SaveData(id)
 			formatex(infoBuffer, charsmax(infoBuffer), "%s=%s,%s;%d,%d,%d,%d,%d,%d", g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id]);
 
 			formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoBuffer, g_iWeapszBuffer, skinBuffer);
+
 			nvault_set(g_Vault, g_szName[id], g_szData);
 
 			task_update_stattrack(id, stattszBuffer, .iType = NVAULT);
