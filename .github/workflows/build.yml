@@ -102,7 +102,7 @@ jobs:
 
       - name: Packaging binaries
         id: packaging
-        run: 7z a -mm=Deflate -mfb=258 -mpass=15 -r CSGORemake-v${{needs.build.outputs.semver}}.zip addons/
+        run: 7z a -mm=Deflate -mfb=258 -mpass=15 -r CSGORemake-v${{needs.build.outputs.semver}}.zip addons/ models/ sound/
 
       - name: Publish artifacts
         uses: softprops/action-gh-release@v1
