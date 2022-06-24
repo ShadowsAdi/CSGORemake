@@ -113,7 +113,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         id: publish-job
         if: |
-          startsWith(github.ref, 'refs/tags/') && ( steps.packaging.outcome == 'success' || steps.packresources.outcome == 'success' )
+          startsWith(github.ref, 'refs/tags/') && ( steps.packaging.outcome == 'success' && steps.packresources.outcome == 'success' )
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
