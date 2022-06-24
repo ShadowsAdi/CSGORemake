@@ -4540,7 +4540,7 @@ DeployWeaponSwitch(iPlayer)
 
 	new weaponid, userskin; 
 
-	newweapon = get_pdata_cbase(iPlayer, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+	new weapon = get_pdata_cbase(iPlayer, OFFSET_ACTIVE_ITEM, XO_PLAYER)
 
 	if (!weapon || !pev_valid(weapon))
 		return
@@ -4946,7 +4946,7 @@ public _CraftSkin(id)
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_CRAFT_SKINS")
 		_ShowOpenCaseCraftMenu(id)
 
-		return PLUGIN_HANDLED
+		return
 	}
 
 	do 
@@ -5023,7 +5023,7 @@ public _CraftStattrackSkin(id)
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_CRAFT_SKINS")
 		_ShowOpenCaseCraftMenu(id)
 
-		return PLUGIN_HANDLED
+		return
 	}
 
 	do 
@@ -9135,7 +9135,7 @@ public concmd_givekeys(id, level, cid)
 
 	if (!cmd_access(id, level, cid, 3, false))
 		return PLUGIN_HANDLED
-	
+
 	new arg1[32]
 	new arg2[16]
 	new target
@@ -11364,7 +11364,7 @@ _SetKillsIcon(id, reset)
 
 			if (num > 10)
 			{
-				return PLUGIN_HANDLED
+				return
 			}
 
 			num--
