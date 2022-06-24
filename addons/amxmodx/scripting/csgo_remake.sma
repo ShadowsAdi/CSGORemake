@@ -6622,6 +6622,7 @@ public _ShowTradeMenu(id)
 		formatex(temp, charsmax(temp), "\w%L", LANG_SERVER, "CSGOR_GM_TARGET", g_szName[target])
 		szItem[0] = 0
 		menu_additem(menu, temp, szItem)
+
 		HasTarget = true
 	}
 	else
@@ -8436,21 +8437,28 @@ public cf_skins_menu_handler(id, menu, item)
 		{
 			_ShowCoinflipMenu(id)
 		}
+
 		return _MenuExit(menu)
 	}
+
 	new itemdata[3]
 	new data[6][32]
 	new index[32]
 	menu_item_getinfo(menu, item, itemdata[0], data[0], charsmax(data), data[1], charsmax(data), itemdata[1])
+
 	parse(data[0], index, charsmax(index))
 	item = str_to_num(index)
+
 	if (item == -10)
 	{
 		_ShowGamesMenu(id)
+
 		return _MenuExit(menu)
 	}
+
 	g_iCoinflipItem[id] = item
 	_ShowCoinflipMenu(id)
+
 	return _MenuExit(menu)
 }
 
@@ -8462,36 +8470,46 @@ public _SelectCoinflipTarget(id)
 
 	new temp[64]
 	formatex(temp, charsmax(temp), "\r%s \y%L", CSGO_TAG, LANG_SERVER, "CSGOR_GM_SELECT_TARGET")
+
 	new menu = menu_create(temp, "cft_menu_handler")
 	new szItem[2]
+
 	szItem[1] = 0
+
 	new Pl[32]
 	new n
-	new p; 
+	new p;
+
 	get_players(Pl, n, "h")
+
 	new total
+
 	if (n)
 	{
 		for (new i; i < n; i++)
 		{
 			p = Pl[i]
+
 			if (g_bLogged[p])
 			{
 				if (!(p == id))
 				{
 					szItem[0] = p
 					menu_additem(menu, g_szName[p], szItem)
+
 					total++
 				}
 			}
 		}
 	}
+
 	if (!total)
 	{
 		formatex(temp, charsmax(temp), "\r%L", LANG_SERVER, "CSGOR_ST_NO_PLAYERS")
 		szItem[0] = -10
 		menu_additem(menu, temp, szItem)
 	}
+
 	_DisplayMenu(id, menu)
 }
 
@@ -8507,14 +8525,18 @@ public cft_menu_handler(id, menu, item)
 		{
 			_ShowCoinflipMenu(id)
 		}
+
 		return _MenuExit(menu)
 	}
+
 	new itemdata[2]
 	new dummy
 	new index
 	new name[32]
+
 	menu_item_getinfo(menu, item, dummy, itemdata, charsmax(itemdata), name, charsmax(index), dummy)
 	index = itemdata[0]
+
 	switch (index)
 	{
 		case -10:
@@ -8532,6 +8554,7 @@ public cft_menu_handler(id, menu, item)
 				g_iCoinflipTarget[id] = index
 				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_YOUR_TARGET", name)
 			}
+
 			_ShowCoinflipMenu(id)
 		}
 	}
@@ -8548,6 +8571,7 @@ public clcmd_say_accept_coin(id)
 	if(sender < 1 || sender > 32)
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_HAVE_COIN_REQ")
+
 		return
 	}
 
@@ -8555,15 +8579,19 @@ public clcmd_say_accept_coin(id)
 	{
 		_ResetCoinflipData(id)
 		_ResetCoinflipData(sender)
+
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SENDER")
+
 		return
 	}
 
 	if (!g_bCoinflipActive[sender] && id == g_iCoinflipTarget[sender])
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_IS_CANCELED")
+
 		_ResetCoinflipData(id)
 		_ResetCoinflipData(sender)
+
 		return
 	}
 
@@ -8573,23 +8601,30 @@ public clcmd_say_accept_coin(id)
 		new zItem = g_iCoinflipItem[id]
 		new sItemsz[32]
 		new zItemsz[32]
+
 		_GetItemName(sItem, sItemsz, charsmax(sItemsz))
 		_GetItemName(zItem, zItemsz, charsmax(zItemsz))
+
 		if(!_UserHasItem(id, zItem) || !_UserHasItem(sender, sItem))
 		{
 			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_FAIL2")
 			client_print_color(sender, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_FAIL2")
+
 			_ResetCoinflipData(id)
 			_ResetCoinflipData(sender)
+
 			return
 		}
+
 		new coin = random_num(1, 2)
+
 		switch(coin)
 		{
 			case 1:
 			{
 				g_iUserSkins[sender][zItem]++
 				g_iUserSkins[id][zItem]--
+
 				client_print_color(sender, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_YOU_WON_X_WITH_X", g_szName[id], zItemsz)
 				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_YOU_LOSE_X_WITH_X", g_szName[sender], zItemsz)
 			}
@@ -8597,10 +8632,12 @@ public clcmd_say_accept_coin(id)
 			{ 
 				g_iUserSkins[id][sItem]++
 				g_iUserSkins[sender][sItem]--
+
 				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_YOU_WON_X_WITH_X", g_szName[sender], sItemsz)
 				client_print_color(sender, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_YOU_LOSE_X_WITH_X", g_szName[id], sItemsz)
 			}
 		}
+
 		_ResetCoinflipData(id)
 		_ResetCoinflipData(sender)
 	}
@@ -8611,7 +8648,9 @@ public clcmd_say_accept_coin(id)
 			g_iCoinflipTarget[id] = sender
 			g_iCoinflipItem[id] = -1
 			g_bCoinflipSecond[id] = true
+
 			_ShowCoinflipMenu(id)
+
 			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_SELECT_ITEM")
 		}
 	}
@@ -8624,25 +8663,35 @@ public clcmd_say_deny_coin(id)
 	#endif
 
 	new sender = g_iCoinflipRequest[id]
+
 	if ( !IsPlayer(sender) )
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DONT_HAVE_COIN_REQ")
+
 		return
 	}
+
 	if (!g_bLogged[sender] || !IsPlayer(sender))
 	{
 		_ResetCoinflipData(id)
+
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SENDER")
+
 		return
 	}
+
 	if (!g_bCoinflipActive[sender] && id == g_iCoinflipTarget[sender])
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_COINFLIP_IS_CANCELED")
+
 		_ResetCoinflipData(id)
+
 		return
 	}
+
 	_ResetCoinflipData(id)
 	_ResetCoinflipData(sender)
+
 	client_print_color(sender, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_TARGET_REFUSE_COINFLIP", g_szName[id])
 	client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_YOU_REFUSE_COINFLIP", g_szName[sender])
 }
@@ -8657,11 +8706,13 @@ public ev_DeathMsg()
 	new victim = read_data(2)
 	new head = read_data(3)
 	new szWeapon[24]
+
 	read_data(4, szWeapon, charsmax(szWeapon))
 
 	if(!IsPlayer(victim))
 	{
 		_Send_DeathMsg(killer, victim, head, szWeapon)
+
 		return PLUGIN_CONTINUE
 	}
 
@@ -8670,6 +8721,7 @@ public ev_DeathMsg()
 	if(!IsPlayer(killer))
 	{
 		_Send_DeathMsg(killer, victim, head, szWeapon)
+
 		return PLUGIN_CONTINUE
 	}
 
@@ -8698,13 +8750,17 @@ public ev_DeathMsg()
 				formatex(szName1, 28 - iName2Len, "%s", g_szName[killer])
 				formatex(szName2, iName2Len, "%s", g_szName[assist])
 			}
+
 			formatex(szName1, 13, "%s", g_szName[killer])
 			formatex(szName2, 13, "%s", g_szName[assist])
 		}
 		formatex(kName, charsmax(kName), "%s + %s", szName1, szName2)
+
 		g_eEnumBooleans[killer][IsChangeNotAllowed] = true
+
 		set_msg_block(g_Msg_SayText, BLOCK_ONCE)
 		set_user_info(killer, "name", kName)
+
 		new szWeaponLong[24]
 		
 		if (equali(szWeapon, "grenade"))
@@ -8721,6 +8777,7 @@ public ev_DeathMsg()
 		args[1] = victim
 		args[2] = head
 		args[3] = get_weaponid(szWeaponLong)
+
 		set_task(0.1, "task_Send_DeathMsg", TASK_SENDDEATH, args, sizeof(args))
 	}
 	else
@@ -8729,7 +8786,9 @@ public ev_DeathMsg()
 	}
 
 	g_iDigit[killer]++
+
 	_SetKillsIcon(killer, 0)
+
 	g_iRoundKills[killer]++
 	
 	if (!g_bLogged[killer])
@@ -8742,12 +8801,16 @@ public ev_DeathMsg()
 		return PLUGIN_CONTINUE
 	
 	g_iUserKills[killer]++
+
 	new iWeaponID = get_user_weapon(killer)
+
 	if(g_iStattrackWeap[killer][bStattrack][iWeaponID])
 	{
 		g_iStattrackWeap[killer][iKillCount][g_iStattrackWeap[killer][iSelected][iWeaponID]]++
 	}
+
 	new bool:levelup
+
 	if (g_iRanksNum - 1 > g_iUserRank[killer])
 	{
 		if (ArrayGetCell(g_aRankKills, g_iUserRank[killer] +1) <= g_iUserKills[killer])
@@ -8763,6 +8826,7 @@ public ev_DeathMsg()
 			ExecuteForward(g_iForwards[ user_level_up ], g_iForwardResult, killer, szRank, g_iUserRank[killer])
 		}
 	}
+
 	new rpoints
 	new rchance
 	if (head)
@@ -8775,12 +8839,16 @@ public ev_DeathMsg()
 		rpoints = random_num(g_iCvars[iKMinPoints], g_iCvars[iKMaxPoints])
 		rchance = random_num(g_iCvars[iKMinChance], g_iCvars[iKMaxChance])
 	}
+
 	g_iUserPoints[killer] += rpoints
+
 	set_hudmessage(255, 255, 255, -1.0, 0.2, 0, 6.0, 2.0)
 	show_hudmessage(killer, "%L", LANG_SERVER, "CSGOR_REWARD_POINTS", rpoints)
+
 	if (rchance > g_iCvars[iDropChance])
 	{
 		new r
+
 		if (0 < g_iCvars[iDropType])
 		{
 			r = 1
@@ -8794,6 +8862,7 @@ public ev_DeathMsg()
 			case 1:
 			{
 				g_iUserCases[killer]++
+
 				if (0 < g_iCvars[iDropType])
 				{
 					client_print_color(killer, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_REWARD_CASE2")
@@ -8806,18 +8875,23 @@ public ev_DeathMsg()
 			case 2:
 			{
 				g_iUserKeys[killer]++
+
 				client_print_color(killer, print_chat, "^4%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_REWARD_KEY")
 			}
 		}
+
 		ExecuteForward(g_iForwards[user_drop], g_iForwardResult, killer)
 	}
+
 	if (levelup)
 	{
 		new szBonus[16]
 		get_cvar_string("csgor_rangup_bonus", szBonus, charsmax(szBonus))
+
 		new keys
 		new cases
 		new points
+
 		for (new i; szBonus[i] != '|'; i++)
 		{
 			switch (szBonus[i])
@@ -8832,8 +8906,10 @@ public ev_DeathMsg()
 				}
 			}
 		}
+
 		new temp[8]
 		strtok(szBonus, temp, charsmax(temp), szBonus, charsmax(szBonus), '|')
+
 		if (szBonus[0])
 		{
 			points = str_to_num(szBonus)
@@ -8850,8 +8926,10 @@ public ev_DeathMsg()
 		{
 			g_iUserPoints[killer] += points
 		}
+
 		client_print_color(killer, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_RANKUP_BONUS", keys, cases, points)
 	}
+
 	return PLUGIN_HANDLED
 }
 
@@ -8862,6 +8940,7 @@ public ev_Damage( victim )
 	#endif
 
 	static attacker, damage
+
 	if(victim && victim <= MAX_PLAYERS && is_user_connected(victim))
 	{
 		attacker = get_user_attacker(victim)
@@ -8902,6 +8981,7 @@ public task_Send_DeathMsg(arg[])
 	}
 
 	_Send_DeathMsg(arg[0], arg[1], arg[2], szWeapon)
+
 	set_msg_block(g_Msg_SayText, BLOCK_ONCE)
 	set_user_info(arg[0], "name", g_szName[arg[0]])
 
@@ -8915,25 +8995,30 @@ public concmd_givepoints(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 3))
-	{
 		return PLUGIN_HANDLED
-	}
+
 	new arg1[32]
 	new arg2[16]
+
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
+
 	new target
+
 	if (arg1[0] == '@')
 	{
 		_GiveToAll(id, arg1, arg2, 0)
 		return PLUGIN_HANDLED
 	}
+
 	target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
+
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1)
@@ -8941,14 +9026,18 @@ public concmd_givepoints(id, level, cid)
 	}
 
 	new amount = str_to_num(arg2)
+
 	if (0 > amount)
 	{
 		g_iUserPoints[target] += amount
+
 		if (0 > g_iUserPoints[target])
 		{
 			g_iUserPoints[target] = 0
 		}
+
 		console_print(id, "%s %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_SUBSTRACT", arg1, amount, LANG_SERVER, "CSGOR_POINTS")
+
 		client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SUB_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_POINTS")
 	}
 	else
@@ -8960,6 +9049,7 @@ public concmd_givepoints(id, level, cid)
 			client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ADD_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_POINTS")
 		}
 	}
+
 	_Save(target)
 
 	return PLUGIN_HANDLED
@@ -8972,39 +9062,52 @@ public concmd_givecases(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 3))
-	{
 		return PLUGIN_HANDLED
-	}
+
 	new arg1[32]
 	new arg2[16]
+
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
+
 	new target
+
 	if (arg1[0] == '@')
 	{
 		_GiveToAll(id, arg1, arg2, 1)
+
 		return PLUGIN_HANDLED
 	}
+
 	target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
+
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
+
 		return PLUGIN_HANDLED
 	}
+
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1)
+
 		return PLUGIN_HANDLED
 	}
+
 	new amount = str_to_num(arg2)
+
 	if (0 > amount)
 	{
 		g_iUserCases[target] -= amount
+
 		if (0 > g_iUserCases[target])
 		{
 			g_iUserCases[target] = 0
 		}
+
 		console_print(id, "%s %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_SUBSTRACT", arg1, amount, LANG_SERVER, "CSGOR_CASES")
+
 		client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SUB_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_CASES")
 	}
 	else
@@ -9012,10 +9115,13 @@ public concmd_givecases(id, level, cid)
 		if (0 < amount)
 		{
 			g_iUserCases[target] += amount
+
 			console_print(id, "%s %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADD", arg1, amount, LANG_SERVER, "CSGOR_CASES")
+
 			client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ADD_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_CASES")
 		}
 	}
+	
 	_Save(target)
 
 	return PLUGIN_HANDLED
@@ -9028,38 +9134,46 @@ public concmd_givekeys(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 3, false))
-	{
 		return PLUGIN_HANDLED
-	}
+	
 	new arg1[32]
 	new arg2[16]
+	new target
+
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
-	new target
+
 	if (arg1[0] == '@')
 	{
 		_GiveToAll(id, arg1, arg2, 2)
 		return PLUGIN_HANDLED
 	}
+
 	target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
+
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	new amount = str_to_num(arg2)
+
 	if (0 > amount)
 	{
 		g_iUserKeys[target] -= amount
+
 		if (0 > g_iUserKeys[target])
 		{
 			g_iUserKeys[target] = 0
 		}
+
 		console_print(id, "%s %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_SUBSTRACT", arg1, amount, LANG_SERVER, "CSGOR_KEYS")
 		client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SUB_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_KEYS")
 	}
@@ -9084,31 +9198,37 @@ public concmd_givedusts(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 3, false))
-	{
 		return PLUGIN_HANDLED
-	}
+
 	new arg1[32]
 	new arg2[16]
+
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
 	new target
+
 	if (arg1[0] == '@')
 	{
 		_GiveToAll(id, arg1, arg2, 3)
 		return PLUGIN_HANDLED
 	}
+
 	target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
+
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1)
 		return PLUGIN_HANDLED;  
 	}
+
 	new amount = str_to_num(arg2)
+
 	if (0 > amount)
 	{
 		g_iUserDusts[target] -= amount
@@ -9128,6 +9248,7 @@ public concmd_givedusts(id, level, cid)
 			client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ADD_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_DUSTS")
 		}
 	}
+
 	_Save(target)
 
 	return PLUGIN_HANDLED
@@ -9140,31 +9261,37 @@ public concmd_setrank(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 3, false))
-	{
 		return PLUGIN_HANDLED
-	}
+
 	new arg1[32]
 	new arg2[8]
+
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
 	new target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
+
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	new rank = str_to_num(arg2)
+
 	if (rank < 0 || rank >= g_iRanksNum)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_RANKID", g_iRanksNum - 1)
 		return PLUGIN_HANDLED
 	}
+
 	g_iUserRank[target] = rank
+
 	if (rank)
 	{
 		g_iUserKills[target] = ArrayGetCell(g_aRankKills, rank - 1)
@@ -9193,27 +9320,32 @@ public concmd_giveskins(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 4, false))
-	{
 		return PLUGIN_HANDLED
-	}
+
 	new arg1[32]
 	new arg2[8]
 	new arg3[16]
+
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
 	read_argv(3, arg3, charsmax(arg3))
+
 	new target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
+
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	new skin = str_to_num(arg2)
+
 	if (skin < 0 || skin >= g_iSkinsNum)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_INVALID_SKINID", g_iSkinsNum - 1)
@@ -9223,6 +9355,7 @@ public concmd_giveskins(id, level, cid)
 	new amount = str_to_num(arg3)
 	new szSkin[48]
 	ArrayGetString(g_aSkinName, skin, szSkin, charsmax(szSkin))
+
 	if (0 > amount)
 	{
 		g_iUserSkins[target][skin] -= amount
@@ -9230,6 +9363,7 @@ public concmd_giveskins(id, level, cid)
 		{
 			g_iUserSkins[target][skin] -= amount
 		}
+
 		console_print(id, "%s %L %s", CSGO_TAG, LANG_SERVER, "CSGOR_SUBSTRACT", arg1, amount, szSkin)
 		client_print_color(target, print_chat, "^4%s^1 %L ^3%s", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SUB_YOU", g_szName[id], amount, szSkin)
 	}
@@ -9254,18 +9388,19 @@ public concmd_give_all_skins(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 2, false))
-	{
 		return PLUGIN_HANDLED
-	}
 	
 	new arg1[32]
 	read_argv(1, arg1, charsmax(arg1))
+
 	new target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
+
 	if(!target) 
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
 		return PLUGIN_HANDLED
 	}
+
 	if(!g_bLogged[target])
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_LOGGED", arg1)
@@ -9280,6 +9415,7 @@ public concmd_give_all_skins(id, level, cid)
 
 	console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_GAVE_ALL_SKINS_TO", g_szName[target])
 	client_print_color(target, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ALL_SKINS", g_szName[id])
+
 	_Save(target)
 
 	return PLUGIN_HANDLED
@@ -9297,6 +9433,7 @@ public native_get_user_points(iPluginID, iParamNum)
 		return -1
 	}
 	new id = get_param(1)
+
 	if(!is_user_connected(id))
 	{
 		log_error(AMX_ERR_NATIVE, "%s Player is not connected (%d)", CSGO_TAG, id)
@@ -9313,7 +9450,9 @@ public native_set_user_points(iPluginID, iParamNum)
 		log_error(AMX_ERR_NATIVE, "%s Invalid param num ! Valid: (PlayerID, Amount)", CSGO_TAG)
 		return -1
 	}
+
 	new id = get_param(1)
+
 	if(!is_user_connected(id))
 	{
 		log_error(AMX_ERR_NATIVE, "%s Player is not connected (%d)", CSGO_TAG, id)
@@ -9321,6 +9460,7 @@ public native_set_user_points(iPluginID, iParamNum)
 	}
 
 	new amount = get_param(2)
+
 	if (0 > amount)
 	{
 		new szName[32]
@@ -9328,10 +9468,12 @@ public native_set_user_points(iPluginID, iParamNum)
 		log_error(AMX_ERR_NATIVE, "%s Invalid amount value (%d) Player (%s)", CSGO_TAG, amount, szName)
 		return -1
 	}
+
 	if(!g_bLogged[id])
 	{
 		return -1
 	}
+
 	g_iUserPoints[id] = amount
 	_Save(id)
 
@@ -10108,6 +10250,7 @@ public native_csgo_get_user_skin(iPLuginID, iParamNum)
 	}
 
 	new id = get_param(1)
+
 	if(!is_user_connected(id))
 	{
 		log_error(AMX_ERR_NATIVE, "%s Player is not connected (%d)", CSGO_TAG, id)
@@ -10182,9 +10325,7 @@ public concmd_finddata(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 2, false))
-	{
 		return PLUGIN_HANDLED
-	}
 
 	new arg1[32]
 	read_argv(1, arg1, charsmax(arg1))
@@ -10207,6 +10348,7 @@ public concmd_finddata(id, level, cid)
 
 			new Data[64]
 			new Timestamp
+
 			if (nvault_lookup(g_Vault, arg1, Data, charsmax(Data), Timestamp))
 			{
 				new pData[6][16]
@@ -10295,14 +10437,14 @@ public concmd_resetdata(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 3, false) || !is_user_connected(id))
-	{
 		return PLUGIN_HANDLED
-	}
+	
 	new arg1[32]
 	new arg2[4]
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
 	new type = str_to_num(arg2)
+
 	if (g_Vault == INVALID_HANDLE)
 	{
 		console_print(id, "%s Reading from vault has failed !", CSGO_TAG)
@@ -10312,6 +10454,7 @@ public concmd_resetdata(id, level, cid)
 	new g_szData[MAX_SKINS * 3 + 94]
 	new g_iWeapszBuffer[MAX_SKINS * 2]
 	new Timestamp
+
 	if (nvault_lookup(g_Vault, arg1, g_szData, charsmax(g_szData), Timestamp))
 	{
 		new index = get_user_index(arg1)
@@ -10330,24 +10473,33 @@ public concmd_resetdata(id, level, cid)
 			console_print(id, "%s The account has been removed: %s", CSGO_TAG, arg1)
 			return PLUGIN_HANDLED
 		}
+
 		new infoBuffer[MAX_SKIN_NAME]
 		new skinBuffer[MAX_SKINS]
 		new password[16]
+
 		strtok(g_szData, password, charsmax(password), g_szData, charsmax(g_szData), '=', 0)
+
 		formatex(infoBuffer, charsmax(infoBuffer), "%s=,;%d,%d,%d,%d,%d,%d", password, 0, 0, 0, 0, 0, 0)
 		formatex(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%d", 0)
+
 		for (new i = 1; i < MAX_SKINS; i++)
 		{
 			format(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%s,0", g_iWeapszBuffer)
 		}
+
 		formatex(skinBuffer, charsmax(skinBuffer), "%d", 0)
+
 		for (new i = 2; i <= 30; i++)
 		{
 			format(skinBuffer, charsmax(skinBuffer), "%s,0", skinBuffer)
 		}
+
 		formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoBuffer, g_iWeapszBuffer, skinBuffer)
 		nvault_set(g_Vault, arg1, g_szData)
+
 		console_print(id, "%s The account has been reseted: %s", CSGO_TAG, arg1)
+
 		ResetData(id, true)
 		_Save(index)
 	}
@@ -10355,6 +10507,7 @@ public concmd_resetdata(id, level, cid)
 	{
 		console_print(id, "%s The account was not found: %s", CSGO_TAG, arg1)
 	}
+
 	return PLUGIN_HANDLED
 }
 
@@ -10365,15 +10518,15 @@ public concmd_changepass(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 3, false))
-	{
 		return PLUGIN_HANDLED
-	}
 
 	new arg1[MAX_NAME_LENGTH]
 	new arg2[32]
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
+
 	new target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
+
 	if (!target)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
@@ -10381,6 +10534,7 @@ public concmd_changepass(id, level, cid)
 	}
 	
 	new len = strlen(g_szUser_SavedPass[target])
+
 	if (len > 6)
 	{
 		copy(g_szUser_SavedPass[target], charsmax(g_szUser_SavedPass[]), arg2)
@@ -10391,7 +10545,9 @@ public concmd_changepass(id, level, cid)
 	{
 		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND_IN_DBASE", target)
 	}
+
 	_Save(target)
+
 	return PLUGIN_HANDLED
 }
 
@@ -10405,11 +10561,14 @@ public concmd_getinfo(id, level, cid)
 	{
 		return PLUGIN_HANDLED
 	}
+
 	new arg1[8]
 	new arg2[8]
 	read_argv(1, arg1, 7)
 	read_argv(2, arg2, 7)
+
 	new num = str_to_num(arg2)
+
 	switch (arg1[0])
 	{
 		case 'r', 'R':
@@ -10459,6 +10618,7 @@ public concmd_getinfo(id, level, cid)
 			console_print(id, "%s Wrong index. Please choose R or S.", CSGO_TAG)
 		}
 	}
+
 	return PLUGIN_HANDLED
 }
 
@@ -10487,7 +10647,9 @@ public concmd_nick(id, level, cid)
 
 	g_eEnumBooleans[player][IsChangeNotAllowed] = true
 	set_user_info(player, "name", arg2)
+
 	client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_CHANGE_X_NICK", g_szName[id], g_szName[player], arg2)
+
 	set_task(0.5, "task_Reset_Name", id + TASK_RESET_NAME)
 
 	console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_CHANGED_NICK", g_szName[player], arg2)
@@ -10502,9 +10664,8 @@ public concmd_skin_index(id, level, cid)
 	#endif
 
 	if (!cmd_access(id, level, cid, 2, false))
-	{
 		return PLUGIN_HANDLED
-	}	
+
 	new arg[48], iIndex, temp[MAX_SKIN_NAME]
 
 	read_argv(1, arg, charsmax(arg))
@@ -10514,6 +10675,7 @@ public concmd_skin_index(id, level, cid)
 	{
 		new szSkin[48]
 		ArrayGetString(g_aSkinName, i, szSkin, charsmax(szSkin))
+
 		iIndex = containi(szSkin, arg)
 
 		if(iIndex > -1)
@@ -10526,6 +10688,7 @@ public concmd_skin_index(id, level, cid)
 			formatex(temp, charsmax(temp), "%L", LANG_SERVER, "CSGOR_NO_SKIN_FOUND")
 		}
 	}
+
 	console_print(id, temp)
 
 	return PLUGIN_HANDLED
@@ -10538,24 +10701,31 @@ public clcmd_say_skin(id)
 	#endif
 
 	new player = id
+
 	if(!is_user_alive(player))
 	{
 		player = pev(player, pev_iuser2)
+
 		if (!is_user_alive(player))
 		{
 			return PLUGIN_HANDLED
 		}
 	}
+
 	if(!g_bLogged[player])
 	{
 		return PLUGIN_HANDLED
 	}
+
 	new iActiveItem = get_pdata_cbase(player, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+
 	if(pev_valid(iActiveItem) != PDATA_SAFE)
 	{
 		return PLUGIN_HANDLED
 	}
+
 	new weapon = get_pdata_int(iActiveItem, OFFSET_ID, XO_WEAPON)
+
 	if((1 << weapon) & weaponsWithoutSkin)
 	{
 		return PLUGIN_HANDLED
@@ -10568,6 +10738,7 @@ public clcmd_say_skin(id)
 		client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_NO_ACTIVE_SKIN")
 		return PLUGIN_HANDLED
 	}
+
 	new sName[48]
 	new sType[4]
 	new bool:craft
@@ -10575,21 +10746,28 @@ public clcmd_say_skin(id)
 	new sDusts
 	new pMin 
 	new pMax 
+
 	ArrayGetString(g_aSkinName, skin, sName, charsmax(sName))
+
 	if(g_iStattrackWeap[player][bStattrack][weapon])
 	{
 		format(sName, charsmax(sName), "(StatTrack) %s", sName)
 	}
+
 	ArrayGetString(g_aSkinType, skin, sType, charsmax(sType))
+
 	if (equali(sType, "c"))
 	{
 		craft = true
 	}
+
 	sChance = ArrayGetCell(g_aSkinChance, skin)
 	pMin = ArrayGetCell(g_aSkinCostMin, skin)
 	sDusts = ArrayGetCell(g_aDustsSkin, skin)
 	pMax = pMin * 2
+
 	client_print_color(id, print_chat, "^4%s^1 Skin: ^3%s^1 | ^3%s^1 | ^3%d%%^1 | ^3%d - %d^1 points^1 | ^3%d ^1Dusts", CSGO_TAG, sName, g_iStattrackWeap[player][bStattrack][weapon] ? "StatTrack" : (craft ? "Craft" : "Drop"), 100 - sChance, pMin, pMax, sDusts)
+	
 	return PLUGIN_HANDLED
 }
 
@@ -10602,18 +10780,22 @@ public concmd_promocode(id)
 	new data[32]
 	read_args(data, charsmax(data))
 	remove_quotes(data)
+
 	if (equal(data, ""))
 	{
 		client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_PROMOCODE_NOT_VALID")
 		client_cmd(id, "messagemode Promocode")
 		return PLUGIN_HANDLED
 	}
+
 	if(g_iCvars[iSaveType] == NVAULT)
 	{
 		_LoadPromocodes(id)
 	}
+
 	g_szUserPromocode[id] = data
 	_ShowPromocodeMenu(id)
+
 	return PLUGIN_HANDLED
 }
 
@@ -10647,8 +10829,11 @@ public concmd_betred(id)
 	
 	g_iRedPoints[id] = amount
 	g_iUserPoints[id] -= amount
+
 	_ShowRouletteMenu(id)
+
 	g_iRoulettePlayers++
+
 	if(g_iRoulettePlayers == 2 && g_iRouletteTime == 60)
 		_RoulettePlay()
 	
@@ -10685,8 +10870,11 @@ public concmd_betwhite(id)
 	
 	g_iWhitePoints[id] = amount
 	g_iUserPoints[id] -= amount
+
 	_ShowRouletteMenu(id)
+
 	g_iRoulettePlayers++
+
 	if(g_iRoulettePlayers == 2 && g_iRouletteTime == 60)
 		_RoulettePlay()
 			
@@ -10723,8 +10911,11 @@ public concmd_betyellow(id)
 
 	g_iYellowPoints[id] = amount
 	g_iUserPoints[id] -= amount
+
 	_ShowRouletteMenu(id)
+
 	g_iRoulettePlayers++
+
 	if(g_iRoulettePlayers == 2 && g_iRouletteTime == 60)
 		_RoulettePlay()
 
@@ -10748,7 +10939,8 @@ public inspect_weapon(id)
 
 	new animation = inspectAnimation[weaponId]
 
-	switch (weaponId) {
+	switch (weaponId) 
+	{
 		case CSW_M4A1:
 		{
 			if (!cs_get_weapon_silen(weapon)) animation = 15
@@ -10760,9 +10952,12 @@ public inspect_weapon(id)
 			else animation = 16
 		}
 	}
+
 	g_eEnumBooleans[id][IsInInspect] = true
+
 	set_pdata_float(weapon, OFFSET_WEAPON_IDLE, 6.5, XO_WEAPON)
 	SendWeaponAnim(id, animation)
+
 	return PLUGIN_HANDLED
 }
 
@@ -10783,17 +10978,17 @@ public WeaponShootInfo2(iPlayer, iEnt, iAnim, const szSoundEmpty[], const szSoun
 	if(!iClip)
 	{
 		emit_sound(iPlayer, CHAN_WEAPON, szSoundEmpty, VOL_NORM, ATTN_NORM, 0, PITCH_NORM)
+
 		if(iPlayAnim)
 		{
 			PlayWeaponState(iPlayer, szSoundFire, iAnim)
 		}
+
 		return FMRES_SUPERCEDE
 	}
 
 	if(!pev_valid(iWeaponType))
-	{
 		return FMRES_SUPERCEDE
-	}
 
 	switch(iWeaponType)
 	{
@@ -10840,6 +11035,7 @@ bool:IsHalf()
 	{
 		return true
 	}
+
 	return false
 }
 
@@ -10853,6 +11049,7 @@ bool:IsLastRound()
 	{
 		return true
 	}
+
 	return false
 }
 
@@ -10871,19 +11068,23 @@ _ShowBestPlayers()
 	new MVP
 	new BestMVP
 	new bonus = g_iCvars[iBestPoints]
+
 	get_players(Pl, n, "he", "TERRORIST")
+
 	if (0 < n)
 	{
 		for (new i; i < n; i++)
 		{
 			p = Pl[i]
 			MVP = g_iUserMVP[p]
+
 			if (MVP < 1 || MVP < BestMVP)
 			{
 			}
 			else
 			{
 				Frags = get_user_frags(p)
+
 				if (MVP > BestMVP)
 				{
 					BestPlayer = p
@@ -10910,6 +11111,7 @@ _ShowBestPlayers()
 	{
 		client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ZERO_MVP", "Terrorist")
 	}
+
 	if (g_bLogged[BestPlayer])
 	{
 		g_iUserPoints[BestPlayer] += bonus
@@ -10919,18 +11121,21 @@ _ShowBestPlayers()
 	BestPlayer = 0
 	BestMVP = 0
 	BestFrags = 0
+
 	if (0 < n)
 	{
 		for (new i; i < n; i++)
 		{
 			p = Pl[i]
 			MVP = g_iUserMVP[p]
+
 			if (MVP < 1 || MVP < BestMVP)
 			{
 			}
 			else
 			{
 				Frags = get_user_frags(p)
+
 				if (MVP > BestMVP)
 				{
 					BestPlayer = p
@@ -10957,6 +11162,7 @@ _ShowBestPlayers()
 	{
 		client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ZERO_MVP", "Counter-Terrorist")
 	}
+
 	if (g_bLogged[BestPlayer])
 	{
 		g_iUserPoints[BestPlayer] += bonus
@@ -10973,11 +11179,14 @@ _ShowMVP(id, event)
 	{
 		return PLUGIN_HANDLED
 	}
+
 	if (event < 1 && g_iRoundKills[id] < 1 )
 	{
 		return PLUGIN_HANDLED
 	}
+
 	g_iUserMVP[id]++
+
 	switch (g_iCvars[iMVPMsgType])
 	{
 		case 0:
@@ -11057,6 +11266,7 @@ _GetTopKiller(team)
 
 	new Pl[MAX_PLAYERS]
 	new n
+
 	switch(team)
 	{
 		case 1:
@@ -11068,19 +11278,23 @@ _GetTopKiller(team)
 			get_players(Pl, n, "h", "CT")
 		}
 	}
+
 	new p
 	new pFrags
 	new pDamage
 	new tempF
 	new tempD
 	new tempID
+
 	for (new i; i < n; i++)
 	{
 		p = Pl[i]
 		pFrags = g_iRoundKills[p]
+
 		if (!(pFrags < tempF))
 		{
 			pDamage = g_iDealDamage[p]
+
 			if (pFrags > tempF || pDamage > tempD)
 			{
 				tempID = p
@@ -11089,10 +11303,12 @@ _GetTopKiller(team)
 			}
 		}
 	}
+
 	if (0 < tempF)
 	{
 		return tempID
 	}
+
 	return PLUGIN_CONTINUE
 }
 
@@ -11107,7 +11323,9 @@ _GiveBonus(id, type)
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_REGISTER")
 		return PLUGIN_HANDLED
 	}
+
 	new rpoints
+
 	switch (type)
 	{
 		case 0:
@@ -11119,11 +11337,13 @@ _GiveBonus(id, type)
 			rpoints = random_num(g_iCvars[iMVPMinPoints], g_iCvars[iMVPMaxPoints])
 		}
 	}
+
 	if(g_bLogged[id])
 	{
 		g_iUserPoints[id] += rpoints
 		_Save(id)
 	}
+
 	return PLUGIN_CONTINUE
 }
 
@@ -11134,19 +11354,19 @@ _SetKillsIcon(id, reset)
 	#endif
 
 	if(!is_user_connected(id))
-	{
-		return PLUGIN_HANDLED
-	}
+		return
 
 	switch (reset)
 	{
 		case 0:
 		{
 			new num = g_iDigit[id]
+
 			if (num > 10)
 			{
 				return PLUGIN_HANDLED
 			}
+
 			num--
 			message_begin(MSG_ONE_UNRELIABLE, g_Msg_StatusIcon, _, id)
 			write_byte(0)
@@ -11155,6 +11375,7 @@ _SetKillsIcon(id, reset)
 			num++
 			message_begin(MSG_ONE_UNRELIABLE, g_Msg_StatusIcon, _, id)
 			write_byte(1)
+
 			if (num > 9)
 			{
 				write_string(szSprite[10])
@@ -11163,6 +11384,7 @@ _SetKillsIcon(id, reset)
 			{
 				write_string(szSprite[num])
 			}
+
 			write_byte(0)
 			write_byte(200)
 			write_byte(0)
@@ -11173,6 +11395,7 @@ _SetKillsIcon(id, reset)
 			new num = g_iDigit[id]
 			message_begin(MSG_ONE_UNRELIABLE, g_Msg_StatusIcon, _, id)
 			write_byte(0)
+
 			if (num > 9)
 			{
 				write_string(szSprite[10])
@@ -11181,6 +11404,7 @@ _SetKillsIcon(id, reset)
 			{
 				write_string(szSprite[num])
 			}
+
 			message_end()
 			g_iDigit[id] = 0
 			message_begin(MSG_ONE_UNRELIABLE, g_Msg_StatusIcon, _, id)
@@ -11192,7 +11416,6 @@ _SetKillsIcon(id, reset)
 			message_end()
 		}
 	}
-	return PLUGIN_HANDLED
 }
 
 _DisplayMenu(id, menu)
@@ -11219,10 +11442,12 @@ bool:IsRegistered(id)
 		{
 			g_szData[0] = 0
 			new Timestamp
+
 			if (nvault_lookup(g_Vault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
 			{
 				return true
 			}
+
 			return false
 		}
 		case MYSQL:
@@ -11243,6 +11468,7 @@ bool:IsRegistered(id)
 			return bFoundData
 		}
 	}
+
 	return false
 }
 
@@ -11253,6 +11479,7 @@ _MenuExit(menu)
 	#endif
 
 	menu_destroy(menu)
+
 	return PLUGIN_HANDLED
 }
 
@@ -11266,6 +11493,7 @@ _GetItemName(item, temp[], len)
 	{
 		return PLUGIN_HANDLED
 	}
+
 	switch (item)
 	{
 		case KEY:
@@ -11281,6 +11509,7 @@ _GetItemName(item, temp[], len)
 			ArrayGetString(g_aSkinName, item, temp, len)
 		}
 	}
+
 	return PLUGIN_HANDLED
 }
 
@@ -11305,6 +11534,7 @@ bool:_UserHasItem(id, item)
 	{
 		return false
 	}
+
 	switch (item)
 	{
 		case KEY:
@@ -11329,6 +11559,7 @@ bool:_UserHasItem(id, item)
 			}
 		}
 	}
+
 	return false
 }
 
@@ -11432,18 +11663,22 @@ _FormatTime(timer[], len, nextevent)
 
 	new seconds = nextevent - get_systime()
 	new minutes
+
 	while (seconds >= 60)
 	{
 		seconds += -60
 		minutes++
 	}
+
 	new bool:add_before
 	new temp[32]
+
 	if (seconds)
 	{
 		formatex(temp, charsmax(temp), "%i %s", seconds, seconds == 1 ? "second" : "seconds")
 		add_before = true
 	}
+
 	if (minutes)
 	{
 		if (add_before)
@@ -11456,6 +11691,7 @@ _FormatTime(timer[], len, nextevent)
 			add_before = true
 		}
 	}
+
 	if (!add_before)
 	{
 		copy(timer, len, "Now!")
@@ -11475,7 +11711,9 @@ _ClearJackpot()
 	ArrayClear(g_aJackpotSkins)
 	ArrayClear(g_aJackpotUsers)
 	arrayset(g_bUserPlayJackpot, false, sizeof(g_bUserPlayJackpot))
+
 	g_bJackpotWork = false
+
 	client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_JP_NEXT")
 }
 
@@ -11503,6 +11741,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 	new n
 	new target
 	new amount = str_to_num(arg2)
+
 	if (amount)
 	{
 		switch (arg1[1])
@@ -11520,6 +11759,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 				get_players(Pl, n, "eh", "TERRORIST")
 			}
 		}
+
 		if (n)
 		{
 			switch (type)
@@ -11529,6 +11769,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 					for (new i; i < n; i++)
 					{
 						target = Pl[i]
+
 						if (g_bLogged[target])
 						{
 							if (0 > amount)
@@ -11538,16 +11779,20 @@ _GiveToAll(id, arg1[], arg2[], type)
 								{
 									g_iUserPoints[target] = 0
 								}
+
 								client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SUB_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_POINTS")
 							}
 							else
 							{
 								g_iUserPoints[target] += amount
+
 								client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ADD_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_POINTS")
 							}
 						}
 					}
+
 					new temp[64]
+
 					if (0 < amount)
 					{
 						if (amount == 1)
@@ -11558,6 +11803,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 						{
 							formatex(temp, charsmax(temp), "You gave %d points to players !", amount)
 						}
+
 						console_print(id, "%s %s", CSGO_TAG, temp)
 					}
 					else
@@ -11570,6 +11816,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 						{
 							formatex(temp, charsmax(temp), "You got %d points from players !", amount *= -1)
 						}
+
 						console_print(id, "%s %s", CSGO_TAG, temp)
 					}
 				}
@@ -11578,6 +11825,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 					for (new i; i < n; i++)
 					{
 						target = Pl[i]
+
 						if (g_bLogged[target])
 						{
 							if (0 > amount)
@@ -11587,16 +11835,20 @@ _GiveToAll(id, arg1[], arg2[], type)
 								{
 									g_iUserCases[target] = 0
 								}
+
 								client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SUB_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_CASES")
 							}
 							else
 							{
 								g_iUserCases[target] += amount
+
 								client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ADD_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_CASES")
 							}
 						}
 					}
+
 					new temp[64]
+
 					if (0 < amount)
 					{
 						if (amount == 1)
@@ -11607,6 +11859,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 						{
 							formatex(temp, charsmax(temp), "You gave %d cases to players !", amount)
 						}
+
 						console_print(id, "%s %s", CSGO_TAG, temp)
 					}
 					else
@@ -11619,6 +11872,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 						{
 							formatex(temp, charsmax(temp), "You got %d cases from players !", amount *= -1)
 						}
+
 						console_print(id, "%s %s", CSGO_TAG, temp)
 					}
 				}
@@ -11627,6 +11881,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 					for (new i; i < n; i++)
 					{
 						target = Pl[i]
+
 						if (g_bLogged[target])
 						{
 							if (0 > amount)
@@ -11636,16 +11891,20 @@ _GiveToAll(id, arg1[], arg2[], type)
 								{
 									g_iUserKeys[target] = 0
 								}
+
 								client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SUB_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_KEYS")
 							}
 							else
 							{
 								g_iUserKeys[target] += amount
+
 								client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ADD_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_KEYS")
 							}
 						}
 					}
+
 					new temp[64]
+
 					if (0 < amount)
 					{
 						if (amount == 1)
@@ -11656,6 +11915,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 						{
 							formatex(temp, charsmax(temp), "You gave %d keys to players !", amount)
 						}
+
 						console_print(id, "%s %s", CSGO_TAG, temp)
 					}
 					else
@@ -11668,6 +11928,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 						{
 							formatex(temp, charsmax(temp), "You got %d keys from players !", amount *= -1)
 						}
+
 						console_print(id, "%s %s", CSGO_TAG, temp)
 					}
 				}
@@ -11676,6 +11937,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 					for (new i; i < n; i++)
 					{
 						target = Pl[i]
+
 						if (g_bLogged[target])
 						{
 							if (0 > amount)
@@ -11685,16 +11947,20 @@ _GiveToAll(id, arg1[], arg2[], type)
 								{
 									g_iUserDusts[target] = 0
 								}
+
 								client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_SUB_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_DUSTS")
 							}
 							else
 							{
 								g_iUserDusts[target] += amount
+
 								client_print_color(target, print_chat, "^4%s^1 %L %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_ADD_YOU", g_szName[id], amount, LANG_SERVER, "CSGOR_DUSTS")
 							}
 						}
 					}
+
 					new temp[64]
+
 					if (0 < amount)
 					{
 						if (amount == 1)
@@ -11705,6 +11971,7 @@ _GiveToAll(id, arg1[], arg2[], type)
 						{
 							formatex(temp, charsmax(temp), "You gave %d dusts to players !", amount)
 						}
+
 						console_print(id, "%s %s", CSGO_TAG, temp)
 					}
 					else
@@ -11717,11 +11984,9 @@ _GiveToAll(id, arg1[], arg2[], type)
 						{
 							formatex(temp, charsmax(temp), "You got %d dusts from players !", amount *= -1)
 						}
+
 						console_print(id, "%s %s", CSGO_TAG, temp)
 					}
-				}
-				default:
-				{
 				}
 			}
 		}
@@ -11729,9 +11994,12 @@ _GiveToAll(id, arg1[], arg2[], type)
 		{
 			console_print(id, "%s No players found in the chosen category: %s", CSGO_TAG, arg1)
 		}
+
 		return PLUGIN_HANDLED
 	}
+
 	console_print(id, "%s <Amount> It must not be 0 (zero)!", CSGO_TAG)
+
 	return PLUGIN_HANDLED
 }
 
@@ -11745,6 +12013,7 @@ bool:_IsItemSkin(item)
 	{
 		return true
 	}
+
 	return false
 }
 
@@ -11758,6 +12027,7 @@ bool:_IsGoodItem(item)
 	{
 		return true
 	}
+
 	return false
 }
 
@@ -11770,6 +12040,7 @@ GetUserSkinsNum(id, iWeapon, bool:bStatTrack = false)
 	new iWeaponID
 	new num
 	new iSkins = 0
+
 	for (new i; i < g_iSkinsNum; i++)
 	{
 		num = bStatTrack ? g_iStattrackWeap[id][iWeap][i] : g_iUserSkins[id][i]
@@ -11779,6 +12050,7 @@ GetUserSkinsNum(id, iWeapon, bool:bStatTrack = false)
 			iSkins += 1
 		}
 	}
+
 	return iSkins
 }
 
@@ -11888,6 +12160,7 @@ WeaponDrawAnim(iEntity)
 			}
 		}
 	}
+
 	return DrawAnim
 }
 
@@ -12016,8 +12289,8 @@ DoIntermission()
 	log_to_file("csgor_debug_logs.log", "DoIntermission()")
 	#endif
 
-    emessage_begin(MSG_BROADCAST, SVC_INTERMISSION)
-    emessage_end()
+	emessage_begin(MSG_BROADCAST, SVC_INTERMISSION)
+	emessage_end()
 }
 
 GetSkinInfo(player, weapon, iActiveItem)
