@@ -20,7 +20,7 @@
 #pragma dynamic 65536
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.2.2"
+#define VERSION "2.2.3"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -2519,11 +2519,16 @@ public task_HUD(id)
 					bError = true
 				}
 
-				new weapon = get_pdata_int(iActiveItem, OFFSET_ID, XO_WEAPON)
-
-				if((1 << weapon) & weaponsWithoutSkin)
+				new weapon
+				
+				if(!bError)
 				{
-					bError = true
+					weapon = get_pdata_int(iActiveItem, OFFSET_ID, XO_WEAPON)
+
+					if((1 << weapon) & weaponsWithoutSkin)
+					{
+						bError = true
+					}
 				}
 
 				new skin
