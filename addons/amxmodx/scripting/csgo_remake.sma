@@ -5461,15 +5461,18 @@ public item_menu_handler(id, menu, item)
 	{
 		new szItem[32], iLocked
 
-		_GetItemName(item, szItem, charsmax(szItem))	
-		iLocked = ArrayGetCell(g_aLockSkin, item)
-
-		if(iLocked)
+		_GetItemName(item, szItem, charsmax(szItem))
+		if(_IsItemSkin(item))
 		{
-			client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ITEM_LOCKED", szItem)
-			_ShowMarketMenu(id)
+			iLocked = ArrayGetCell(g_aLockSkin, item)
 
-			return _MenuExit(menu)
+			if(iLocked)
+			{
+				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ITEM_LOCKED", szItem)
+				_ShowMarketMenu(id)
+
+				return _MenuExit(menu)
+			}
 		}
 		
 		g_iUserSellItem[id] = item
