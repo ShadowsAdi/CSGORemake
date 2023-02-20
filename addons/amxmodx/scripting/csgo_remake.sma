@@ -4553,7 +4553,7 @@ DeployWeaponSwitch(iPlayer)
 	weaponid = cs_get_weapon_id(weapon)
 	userskin = (g_iStattrackWeap[iPlayer][bStattrack][weaponid] ? g_iStattrackWeap[iPlayer][iSelected][weaponid] : g_iUserSelectedSkin[iPlayer][weaponid])
 
-	new model[48]
+	new model[128]
 
 	new imp = pev(weapon, pev_impulse)
 
@@ -4561,15 +4561,23 @@ DeployWeaponSwitch(iPlayer)
 	{
 		ArrayGetString(g_aSkinModel, imp - 1, model, charsmax(model))
 
-		set_pev(iPlayer, pev_viewmodel2, model)
+		if(file_exists(model))
+		{
+			set_pev(iPlayer, pev_viewmodel2, model)
+		}
 
 		g_iUserViewBody[iPlayer][weaponid] = ArrayGetCell(g_aSkinSubModel, imp - 1)
 
 		if (g_bSkinHasModelP[imp - 1])
 		{
+			model[0] = EOS
+
 			ArrayGetString(g_aSkinModelP, imp - 1, model, charsmax(model))
 
-			set_pev(iPlayer, pev_viewmodel2, model)
+			if(file_exists(model))
+			{
+				set_pev(iPlayer, pev_weaponmodel, model)
+			}
 		}
 	}
 	else
@@ -4600,14 +4608,23 @@ DeployWeaponSwitch(iPlayer)
 			{
 				ArrayGetString(g_aSkinModel, userskin, model, charsmax(model))
 
-				set_pev(iPlayer, pev_viewmodel2, model)
+				if(file_exists(model))
+				{
+					set_pev(iPlayer, pev_viewmodel2, model)
+				}
 
 				g_iUserViewBody[iPlayer][weaponid] = ArrayGetCell(g_aSkinSubModel, userskin)
 
 				if (g_bSkinHasModelP[userskin])
 				{
+					model[0] = EOS
+
 					ArrayGetString(g_aSkinModelP, userskin, model, charsmax(model))
-					set_pev(iPlayer, pev_viewmodel2, model)
+					
+					if(file_exists(model))
+					{
+						set_pev(iPlayer, pev_weaponmodel, model)
+					}
 				}
 			}
 		}
@@ -4616,7 +4633,10 @@ DeployWeaponSwitch(iPlayer)
 		{
 			if(defaultModels[g_iWeaponIndex[iPlayer]][0] != '-')
 			{
-				set_pev(iPlayer, pev_viewmodel2, defaultModels[g_iWeaponIndex[iPlayer]])
+				if(file_exists(defaultModels[g_iWeaponIndex[iPlayer]]))
+				{
+					set_pev(iPlayer, pev_viewmodel2, defaultModels[g_iWeaponIndex[iPlayer]])
+				}
 				g_iUserViewBody[iPlayer][weaponid] = ArrayGetCell(g_aDefaultSubmodel, g_iWeaponIndex[iPlayer])
 			}
 		}
