@@ -303,6 +303,9 @@ CSGOR_GIVEAWAY_PLAYER_JOINED = ^4%n^1 a intrat la giveaway pentru ^4%s^1.
 CSGOR_GIVEAWAY_WON_BY = Jucatorul ^4%n^1 a castigat ^4%s^1 la GiveAway.
 CSGOR_GIVEAWAY_CLOSED = Giveaway-ul este ^4inchis ^1pentru moment.
 
+CSGOR_LOADING_DATA = Datele tale sunt in curs de ^4incarcare^1.
+CSGOR_DATA_LOADED = Datele tale au fost ^4incarcate cu succes^1.
+
 [en]
 CSGOR_NO_DROP_SKINS = There are no drop type skins!
 CSGOR_NO_CRAFT_SKINS = There are no craft type skins!
@@ -608,3 +611,6 @@ CSGOR_GIVEAWAY_JOINED = Already Joined
 CSGOR_GIVEAWAY_PLAYER_JOINED = ^4%n^1 has joined giveaway for ^4%s^1.
 CSGOR_GIVEAWAY_WON_BY = Player ^4%n^1 won skin ^4%s^1 at GiveAway.
 CSGOR_GIVEAWAY_CLOSED = Giveaway is ^4closed ^1for now.
+
+CSGOR_LOADING_DATA = Your account is being ^4loaded^1 please wait.
+CSGOR_DATA_LOADED = Your data has been ^4successfully loaded^1.
