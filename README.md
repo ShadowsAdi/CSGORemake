@@ -1,4 +1,4 @@
-# CSGO Remake V 2.2.2
+# CSGO Remake V 2.3.0
 <img align="center" src="https://i.imgur.com/ByWZCEh.jpg" alt="CS:GO Remake"/>
 
 Mod inspired by the popular Counter Strike: Global Offensive.
@@ -8,7 +8,7 @@ Running only on AmxModX 1.8.3 / 1.9.0 / 1.10.0
 [Click HERE](https://github.com/ShadowsAdi/CSGORemake/releases/latest)
 
 ## Requirements
-This mod were tested on Linux Distribution with ReHLDS Engine, ReGameDLL and ReAPI:
+This mod were tested on Linux Distribution and Windows with ReHLDS Engine, ReGameDLL and ReAPI:
 - AmxModX 1.8.3-5201
 - AmxModX 1.9.0-5271
 - AmxModX 1.10.0-5406
@@ -21,9 +21,9 @@ Extract the archive and drag and drop files in your 'Cstrike' folder.
 All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This file will be created automatically after mod is installed and running.
 
 ## Features
-nVault and MySQL data saving.
+MySQL data saving.
 
-Maxmimum skin amount is 441.
+Maxmimum skin amount is 450.
 
 StatTrack System on every Weapon Skin.
 
