@@ -1,14 +1,13 @@
 #include <amxmodx>
 #include <amxmisc>
 #include <cstrike>
-#include <csx>
 #include <csgo_remake>
 #include <engine>
 #include <fakemeta>
 #include <hamsandwich>
-#include <nvault>
 #include <sqlx>
 #include <unixtime>
+#include <reapi>
 
 /* Uncomment this if you want to enable debug informations. Be carefull, this will spam server's logs */
 //#define DEBUG
@@ -16,17 +15,17 @@
 /* Uncomment this if you want to setup HUD Message */
 //#define HUD_POS
 
-/* Uncomment this if you need more memory to allocate. */
-#pragma dynamic 65536
+/* Change this in order to increase or decrease the number of maximum skins allowed */
+#define MAX_SKINS						450
+
+/* DO NOT MODIFY THIS LIME. */
+#pragma dynamic MAX_SKINS * 17
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.2.3"
+#define VERSION "2.3.0"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
-
-/* Do NOT Modify the limit only if you know what are you doing ( Could cause some on stack problems ) */
-#define MAX_SKINS						450
 
 #define WEAPONS_NR						CSW_P90 + 1
 
@@ -176,7 +175,7 @@ enum _:EnumChat
 enum _:EnumSkinsMenuInfo
 {
 	ItemName[32],
-	ItemID[CSW_P90]
+	ItemId[CSW_P90]
 }
 
 enum _:EnumDynamicMenu
@@ -254,7 +253,6 @@ enum _:EnumCvars
 	iCmdAccess,
 	iOverrideMenu,
 	iWarmUpDuration,
-	iSaveType,
 	iCompetitive,
 	iBestPoints,
 	iRespawn,
@@ -361,16 +359,13 @@ new inspectAnimation[] =
 new Handle:g_hSqlTuple
 new g_szSqlError[512]
 new Handle:g_iSqlConnection
-new g_Vault
-new g_nVault
-new g_pVault
-new g_sVault
 
 new g_iRoulleteNumbers[7][8]
 new g_iRoulettePlayers
 new g_iRouletteTime = 60
 
-new bool:g_bLogged[ MAX_PLAYERS + 1 ]
+new bool:g_bLogged[MAX_PLAYERS + 1]
+new bool:g_bLoaded[MAX_PLAYERS + 1]
 new bool:g_bSkinHasModelP[MAX_SKINS + 1]
 new g_MsgSync
 
@@ -672,7 +667,7 @@ new g_iMaxPlayers
 const PRIMARY_WEAPONS_BIT_SUM = (1<<CSW_SCOUT)|(1<<CSW_XM1014)|(1<<CSW_MAC10)|(1<<CSW_AUG)|(1<<CSW_UMP45)|(1<<CSW_SG550)|(1<<CSW_GALIL)|(1<<CSW_FAMAS)|(1<<CSW_AWP)|(1<<CSW_MP5NAVY)|(1<<CSW_M249)|(1<<CSW_M3)|(1<<CSW_M4A1)|(1<<CSW_TMP)|(1<<CSW_G3SG1)|(1<<CSW_SG552)|(1<<CSW_AK47)|(1<<CSW_P90)
 const SECONDARY_WEAPONS_BIT_SUM = (1<<CSW_P228)|(1<<CSW_ELITE)|(1<<CSW_FIVESEVEN)|(1<<CSW_USP)|(1<<CSW_GLOCK18)|(1<<CSW_DEAGLE)
 
-new g_szData[MAX_SKINS * 5 + 94]
+new Trie:g_tDataTrie
 
 public plugin_init()
 {
@@ -683,9 +678,6 @@ public plugin_init()
 	register_plugin(PLUGIN, VERSION, AUTHOR)
 	
 	new pcvar = create_cvar("csgor_author", "Shadows Adi", FCVAR_SERVER|FCVAR_EXTDLL|FCVAR_UNLOGGED|FCVAR_SPONLY, "DO NOT MODIFY!" )
-	
-	pcvar = create_cvar("csgor_savetype", "0", FCVAR_NONE, "(0|1) Save type || 0 - nVault Save  | 1 - MYSQL Save", true, 0.0, true, 1.0)
-	bind_pcvar_num(pcvar, g_iCvars[iSaveType])
 
 	pcvar = create_cvar("csgor_dbase_host", "localhost", FCVAR_SPONLY | FCVAR_PROTECTED, "Database Host")
 	bind_pcvar_string(pcvar, g_iCvars[szSqlHost], charsmax(g_iCvars[szSqlHost]))
@@ -963,7 +955,7 @@ public plugin_init()
 	register_concmd("BetWhite", "concmd_betwhite")
 	register_concmd("BetYellow", "concmd_betyellow")
 
-	register_impulse(100, "inspect_weapon")
+	RegisterHookChain(RG_CBasePlayer_ImpulseCommands, "RG_CBasePlayer_ImpulseCommands_Post", 1)
 
 	new Flags[10]
 	get_pcvar_string(g_iCvars[iCmdAccess], Flags, charsmax(Flags))
@@ -989,135 +981,101 @@ public plugin_init()
 		register_clcmd("chooseteam", "clcmd_chooseteam")
 	}
 
-	set_task(2.0, "DetectSaveType")
+	g_tDataTrie = TrieCreate()
+
+	set_task(2.0, "DatabaseConnect")
 }
 
-public DetectSaveType()
+public DatabaseConnect()
 {
 	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "DetectSaveType()")
+	log_to_file("csgor_debug_logs.log", "DatabaseConnect()")
 	#endif
 
-	switch(g_iCvars[iSaveType])
+	g_hSqlTuple = SQL_MakeDbTuple(g_iCvars[szSqlHost], g_iCvars[szSqlUsername], g_iCvars[szSqlPassword], g_iCvars[szSqlDatabase])
+
+	new iError
+	g_iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
+
+	if(g_iSqlConnection == Empty_Handle)
 	{
-		case NVAULT:
+		log_to_file("csgo_remake_errors.log", "CSGO REMAKE Failed to connect to database. Make sure databse settings are right!")
+		SQL_FreeHandle(g_iSqlConnection)
+
+		return
+	}
+
+	new szQueryData[600]
+	formatex(szQueryData, charsmax(szQueryData),"CREATE TABLE IF NOT EXISTS `csgor_data` \
+		(`ID` INT NOT NULL AUTO_INCREMENT,\
+		`Name` VARCHAR(32) NOT NULL,\
+		`SteamID` VARCHAR(32) NOT NULL,\
+		`Last IP` VARCHAR(19) NOT NULL,\
+		`Password` VARCHAR(32) NOT NULL,\
+		`ChatTag` VARCHAR(16) NOT NULL,\
+		`ChatTag Color` VARCHAR(4) NOT NULL,\
+		`Points` INT(10) NOT NULL,\
+		`Scraps` INT(12) NOT NULL,\
+		`Keys` INT(12) NOT NULL,\
+		`Cases` INT(12) NOT NULL,\
+		`Kills` INT(12) NOT NULL,\
+		`Rank` INT(2) NOT NULL,\
+		`Bonus Timestamp` INT NOT NULL,\
+		`Promocode` INT(2) NOT NULL,\
+		PRIMARY KEY(ID, Name));")
+
+	new Handle:iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
+
+	if(!SQL_Execute(iQueries))
+	{
+		SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
+		log_amx(g_szSqlError)
+	}
+
+	formatex(szQueryData, charsmax(szQueryData), "SELECT `SteamID` FROM `csgor_data`")
+
+	iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
+
+	if(!SQL_Execute(iQueries))
+	{
+		SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
+
+		if(containi(g_szSqlError, "Unknown column") != -1)
 		{
-			g_Vault = nvault_open("csgor_remake")
+			formatex(szQueryData, charsmax(szQueryData), "ALTER TABLE `csgor_data` ADD `SteamID` varchar(32) NOT NULL AFTER `Name`, \
+				ADD `Last IP` varchar(19) NOT NULL AFTER `SteamID`;")
 
-			if (g_Vault == INVALID_HANDLE)
-			{
-				set_fail_state("%s Could not open file csgo_remake.vault.", CSGO_TAG)
-			}
-
-			g_nVault = nvault_open("bonus_vault")
-
-			if(g_nVault == INVALID_HANDLE)
-			{
-				set_fail_state("%s Error opening bonus_vault", CSGO_TAG)
-			}
-			
-			g_pVault = nvault_open("promocode_vault")
-
-			if(g_pVault == INVALID_HANDLE )
-			{
-				set_fail_state("%s Error opening promocode_vault", CSGO_TAG)
-			}
-
-			g_sVault = nvault_open("stattrack_vault")
-
-			if(g_sVault == INVALID_HANDLE )
-			{
-				set_fail_state("%s Error opening stattrack_vault", CSGO_TAG)
-			}
-		}
-		case MYSQL:
-		{
-			g_hSqlTuple = SQL_MakeDbTuple(g_iCvars[szSqlHost], g_iCvars[szSqlUsername], g_iCvars[szSqlPassword], g_iCvars[szSqlDatabase])
-
-			new iError
-			g_iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
-
-			if(g_iSqlConnection == Empty_Handle)
-			{
-				log_to_file("csgo_remake_errors.log", "CSGO REMAKE Failed to connect to database. Make sure databse settings are right!")
-				SQL_FreeHandle(g_iSqlConnection)
-
-				return
-			}
-
-			new szQueryData[600]
-			formatex(szQueryData, charsmax(szQueryData),"CREATE TABLE IF NOT EXISTS `csgor_data` \
-				(`ID` INT NOT NULL AUTO_INCREMENT,\
-				`Name` VARCHAR(32) NOT NULL,\
-				`SteamID` VARCHAR(32) NOT NULL,\
-				`Last IP` VARCHAR(19) NOT NULL,\
-				`Password` VARCHAR(32) NOT NULL,\
-				`ChatTag` VARCHAR(16) NOT NULL,\
-				`ChatTag Color` VARCHAR(4) NOT NULL,\
-				`Points` INT(10) NOT NULL,\
-				`Scraps` INT(12) NOT NULL,\
-				`Keys` INT(12) NOT NULL,\
-				`Cases` INT(12) NOT NULL,\
-				`Kills` INT(12) NOT NULL,\
-				`Rank` INT(2) NOT NULL,\
-				`Bonus Timestamp` INT NOT NULL,\
-				`Promocode` INT(2) NOT NULL,\
-				PRIMARY KEY(ID, Name));")
-
-			new Handle:iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
-		
+			iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
+	
 			if(!SQL_Execute(iQueries))
 			{
 				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
 				log_amx(g_szSqlError)
 			}
-
-			formatex(szQueryData, charsmax(szQueryData), "SELECT `SteamID` FROM `csgor_data`")
-
-			iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
-		
-			if(!SQL_Execute(iQueries))
-			{
-				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
-
-				if(containi(g_szSqlError, "Unknown column") != -1)
-				{
-					formatex(szQueryData, charsmax(szQueryData), "ALTER TABLE `csgor_data` ADD `SteamID` varchar(32) NOT NULL AFTER `Name`, \
-						ADD `Last IP` varchar(19) NOT NULL AFTER `SteamID`;")
-
-					iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
-			
-					if(!SQL_Execute(iQueries))
-					{
-						SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
-						log_amx(g_szSqlError)
-					}
-				}
-			}
-
-			formatex(szQueryData, charsmax(szQueryData), "CREATE TABLE IF NOT EXISTS `csgor_skins` \
-				(`ID` INT NOT NULL AUTO_INCREMENT,\
-				`Name` VARCHAR(32) NOT NULL,\
-				`Skins` VARCHAR(%d) NOT NULL,\
-				`Stattrack Skins` VARCHAR(%d) NOT NULL,\
-				`Stattrack Kills` VARCHAR(%d) NOT NULL,\
-				`Selected Stattrack` VARCHAR(%d) NOT NULL,\
-				`Selected Skins` VARCHAR(%d) NOT NULL,\
-				PRIMARY KEY(ID, Name));", (MAX_SKINS * 3 + 94), (MAX_SKINS * 3 + 94), (MAX_SKINS * 3 + 94), 150, 150)
-
-			iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
-
-			if(!SQL_Execute(iQueries))
-			{
-				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
-				log_amx(g_szSqlError)
-
-				return
-			}
-
-			SQL_FreeHandle(iQueries)
 		}
 	}
+
+	formatex(szQueryData, charsmax(szQueryData), "CREATE TABLE IF NOT EXISTS `csgor_skins` \
+		(`ID` INT NOT NULL AUTO_INCREMENT,\
+		`Name` VARCHAR(32) NOT NULL,\
+		`Skins` VARCHAR(%d) NOT NULL,\
+		`Stattrack Skins` VARCHAR(%d) NOT NULL,\
+		`Stattrack Kills` VARCHAR(%d) NOT NULL,\
+		`Selected Stattrack` VARCHAR(%d) NOT NULL,\
+		`Selected Skins` VARCHAR(%d) NOT NULL,\
+		PRIMARY KEY(ID, Name));", (MAX_SKINS * 3 + 94), (MAX_SKINS * 3 + 94), (MAX_SKINS * 3 + 94), 150, 150)
+
+	iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
+
+	if(!SQL_Execute(iQueries))
+	{
+		SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
+		log_amx(g_szSqlError)
+
+		return
+	}
+
+	SQL_FreeHandle(iQueries)
 }
 
 public plugin_precache()
@@ -1263,7 +1221,7 @@ public plugin_precache()
 				}
 				case secSortedMenu:
 				{
-					parse(szBuffer, Weapons[ItemName], charsmax(Weapons[ItemName]), Weapons[ItemID], charsmax(Weapons[ItemID]))
+					parse(szBuffer, Weapons[ItemName], charsmax(Weapons[ItemName]), Weapons[ItemId], charsmax(Weapons[ItemId]))
 
 					ArrayPushArray(g_aSkinsMenu, Weapons)
 				}
@@ -1492,35 +1450,11 @@ public plugin_end()
 	ArrayDestroy(g_aDynamicMenu)
 	ArrayDestroy(g_aSkipChat)
 
-	switch(g_iCvars[iSaveType])
-	{
-		case NVAULT:
-		{
-			if (g_iCvars[iPruneDays])
-			{
-				nvault_prune(g_sVault, 0, get_systime() - ((60 * 60 * 24) * g_iCvars[iPruneDays]))
-				nvault_prune(g_Vault, 0, get_systime() - ((60 * 60 * 24) * g_iCvars[iPruneDays]))
-			}
-			if(g_iCvars[iTimeDelete])
-			{
-				nvault_prune(g_nVault,0,get_systime() - (60 * 60 * g_iCvars[iTimeDelete]))
-			}
-			if(g_iCvars[iPromoTime])
-			{
-				nvault_prune(g_pVault,0,get_systime() - ((60 * 60 * 24) * g_iCvars[iPromoTime]))
-			}
+	TrieDestroy(g_tDataTrie)
 
-			nvault_close(g_Vault)
-			nvault_close(g_nVault)
-			nvault_close(g_pVault)
-			nvault_close(g_sVault)
-		}
-		case MYSQL:
-		{
-			SQL_FreeHandle(g_hSqlTuple)
-			SQL_FreeHandle(g_iSqlConnection)
-		}
-	}
+	SQL_FreeHandle(g_hSqlTuple)
+	SQL_FreeHandle(g_iSqlConnection)
+		
 }
 
 public client_connect(id)
@@ -2615,176 +2549,8 @@ _Load(id)
 
 public _LoadData(id)
 {
-	switch(g_iCvars[iSaveType])
-	{
-		case NVAULT:
-		{
-			new Timestamp
+	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
 
-			if (nvault_lookup(g_Vault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
-			{
-				new szBuffer[MAX_SKIN_NAME], weaponData[8]
-				new userData[6][32]
-
-				strtok(g_szData, g_szUser_SavedPass[id], charsmax(g_szUser_SavedPass), g_szData, charsmax(g_szData), '=')
-				strtok(g_szData, g_szUserPrefix[id], charsmax(g_szUserPrefix), g_szData, charsmax(g_szData), ',')
-				strtok(g_szData, g_szUserPrefixColor[id], charsmax(g_szUserPrefixColor), g_szData, charsmax(g_szData), ';')
-				strtok(g_szData, szBuffer, charsmax(szBuffer), g_szData, charsmax(g_szData), '*')
-
-				for (new i; i < sizeof userData; i++)
-				{
-					strtok(szBuffer, userData[i], charsmax(userData[]), szBuffer, charsmax(szBuffer), ',')
-				}
-
-				g_iUserPoints[id] = str_to_num(userData[0])
-				g_iUserDusts[id] = str_to_num(userData[1])
-				g_iUserKeys[id] = str_to_num(userData[2])
-				g_iUserCases[id] = str_to_num(userData[3])
-				g_iUserKills[id] = str_to_num(userData[4])
-				g_iUserRank[id] = str_to_num(userData[5])
-
-				new skinBuffer[MAX_SKINS]
-
-				new temp[4]
-
-				strtok(g_szData, g_szData, charsmax(g_szData), skinBuffer, charsmax(skinBuffer), '#')
-
-				for (new j = 1; j <= CSW_P90 && skinBuffer[0] && strtok(skinBuffer, temp, charsmax(temp), skinBuffer, charsmax(skinBuffer), ','); j++)
-				{
-					g_iUserSelectedSkin[id][j] = str_to_num(temp)
-				}
-
-				for (new j = 0; j < MAX_SKINS && g_szData[0] && strtok(g_szData, weaponData, 7, g_szData, charsmax(g_szData), ','); j++)
-				{
-					g_iUserSkins[id][j] = str_to_num(weaponData)
-				}
-			}
-
-			g_szData[0] = 0
-
-			if(nvault_lookup(g_sVault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
-			{
-				new weaponData[8]
-				new skinBuffer[MAX_SKINS * 2 + 94]
-				new killcount[MAX_SKINS * 2]
-				new iLine = 0
-				skinBuffer[0] = 0
-				killcount[0] = 0
-				new temp[2][8]
-
-				strtok(g_szData, g_szData, charsmax(g_szData), skinBuffer, charsmax(skinBuffer), '#')
-				strtok(skinBuffer, skinBuffer, charsmax(skinBuffer), killcount, charsmax(killcount), '*')
-
-				for (new j = 1; j <= CSW_P90 && skinBuffer[0] && strtok(skinBuffer, temp[0], charsmax(temp[]), skinBuffer, charsmax(skinBuffer), ','); j++)
-				{
-					g_iStattrackWeap[id][iSelected][j] = str_to_num(temp[0])
-					g_iStattrackWeap[id][bStattrack][j] = str_to_num(temp[0]) != -1 ? true : false
-				}
-
-				for (new j = 0; j < MAX_SKINS && g_szData[0] && strtok(g_szData, weaponData, 7, g_szData, charsmax(g_szData), ','); j++)
-				{
-					g_iStattrackWeap[id][iWeap][j] = str_to_num(weaponData)
-				}
-
-				for (new j = 0; j < MAX_SKINS && killcount[0] && strtok(killcount, temp[1], charsmax(temp[]), killcount, charsmax(killcount), ','); j++)
-				{
-					iLine += 1
-					g_iStattrackWeap[id][iKillCount][j] = str_to_num(temp[1])
-				}
-			}
-		}
-		case MYSQL:
-		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
-
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", g_szSqlError)
-				SQL_FreeHandle(iQuery)
-
-				return
-			}
-
-			new szQuery[512]
-			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? false : true
-
-   			if(bFoundData)
-   			{
-   				formatex(szQuery, charsmax(szQuery), "INSERT INTO `csgor_data` \
-	   				(`Name`, \
-	   				`SteamID`, \
-	   				`Last IP`, \
-	   				`Password`, \
-	   				`ChatTag`, \
-	   				`ChatTag Color`, \
-	   				`Points`, \
-	   				`Scraps`, \
-	   				`Keys`, \
-	   				`Cases`, \
-	   				`Kills`, \
-	   				`Rank`, \
-	   				`Bonus Timestamp`, \
-	   				`Promocode` \
-	   				) VALUES (^"%s^", ^"%s^", ^"%s^", ^"%s^",^"%s^",'0','0','0','0','0','0','0','0','0');", g_szName[id], g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id])
-   			}
-   			else
-   			{
-   				formatex(szQuery, charsmax(szQuery), "SELECT \
-   					`Password`, \
-   					`ChatTag`, \
-   					`ChatTag Color`, \
-   					`Points`, \
-   					`Scraps`, \
-   					`Keys`, \
-   					`Cases`, \
-   					`Kills`, \
-   					`Rank`, \
-   					`Bonus Timestamp`, \
-   					`Promocode` \
-   					FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
-   			}
-
-   			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
-
-   			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", g_szSqlError)
-
-				return
-			}
-
-			if(!bFoundData)
-			{
-				if(SQL_NumResults(iQuery) > 0)
-				{
-					SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Password"), g_szUser_SavedPass[id], charsmax(g_szUser_SavedPass[]))
-					SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "ChatTag"), g_szUserPrefix[id], charsmax(g_szUserPrefix[]))
-					SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "ChatTag Color"), g_szUserPrefixColor[id], charsmax(g_szUserPrefixColor[]))
-					g_iUserPoints[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Points"))
-					g_iUserDusts[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Scraps"))
-					g_iUserKeys[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Keys"))
-					g_iUserCases[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Cases"))
-					g_iUserKills[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Kills"))
-					g_iUserRank[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Rank"))
-					g_iPromoCount[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Promocode"))
-				}
-			}
-
-			SQL_FreeHandle(iQuery)
-		}
-	}
-}
-
-public _LoadSkins(id)
-{
-	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "_LoadSkins()")
-	#endif
-
-	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_skins` WHERE `Name` = ^"%s^";", g_szName[id])
-			
 	if(!SQL_Execute(iQuery))
 	{
 		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
@@ -2798,6 +2564,107 @@ public _LoadSkins(id)
 	new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? false : true
 
 	if(bFoundData)
+	{
+		formatex(szQuery, charsmax(szQuery), "INSERT INTO `csgor_data` \
+			(`Name`, \
+			`SteamID`, \
+			`Last IP`, \
+			`Password`, \
+			`ChatTag`, \
+			`ChatTag Color`, \
+			`Points`, \
+			`Scraps`, \
+			`Keys`, \
+			`Cases`, \
+			`Kills`, \
+			`Rank`, \
+			`Bonus Timestamp`, \
+			`Promocode` \
+			) VALUES (^"%s^", ^"%s^", ^"%s^", ^"%s^",^"%s^",'0','0','0','0','0','0','0','0','0');", g_szName[id], g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id])
+	}
+	else
+	{
+		formatex(szQuery, charsmax(szQuery), "SELECT \
+			`Password`, \
+			`ChatTag`, \
+			`ChatTag Color`, \
+			`Points`, \
+			`Scraps`, \
+			`Keys`, \
+			`Cases`, \
+			`Kills`, \
+			`Rank`, \
+			`Bonus Timestamp`, \
+			`Promocode` \
+			FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
+	}
+
+	iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
+
+	if(!SQL_Execute(iQuery))
+	{
+		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+		log_to_file("csgo_remake_errors.log", g_szSqlError)
+
+		return
+	}
+
+	if(!bFoundData)
+	{
+		if(SQL_NumResults(iQuery) > 0)
+		{
+			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Password"), g_szUser_SavedPass[id], charsmax(g_szUser_SavedPass[]))
+			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "ChatTag"), g_szUserPrefix[id], charsmax(g_szUserPrefix[]))
+			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "ChatTag Color"), g_szUserPrefixColor[id], charsmax(g_szUserPrefixColor[]))
+			g_iUserPoints[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Points"))
+			g_iUserDusts[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Scraps"))
+			g_iUserKeys[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Keys"))
+			g_iUserCases[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Cases"))
+			g_iUserKills[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Kills"))
+			g_iUserRank[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Rank"))
+			g_iPromoCount[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Promocode"))
+		}
+	}
+
+	SQL_FreeHandle(iQuery)
+}
+
+public _LoadSkins(id)
+{
+	#if defined DEBUG
+	log_to_file("csgor_debug_logs.log", "_LoadSkins()")
+	#endif
+
+	new szQuery[90]
+	formatex(szQuery, charsmax(szQuery), "SELECT * FROM `csgor_skins` WHERE `Name` = ^"%s^";", g_szName[id])
+
+	new szData[2]
+	szData[0] = id
+
+	SQL_ThreadQuery(g_hSqlTuple, "QueryPlayerSkins", szQuery, szData, charsmax(szData))
+}
+
+public QueryPlayerSkins(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize, Float:flQueueTime)
+{
+	switch(iFailState)
+	{
+		case TQUERY_CONNECT_FAILED: 
+		{
+			log_to_file("csgo_remake_errors.log", "[SQL Error] Connection failed (%i): %s", Errcode, Error)
+		}
+		case TQUERY_QUERY_FAILED:
+		{
+			log_to_file("csgo_remake_errors.log", "[SQL Error] Query failed (%i): %s", Errcode, Error)
+		}
+	}
+
+	new szQuery[188 + MAX_NAME_LENGTH]
+	new id = szData[0]
+
+	if(!is_user_connected(id))
+		return
+
+	if(!SQL_NumResults( iQuery ))
 	{
 		formatex(szQuery, charsmax(szQuery), "INSERT INTO `csgor_skins` \
 		(`Name`, \
@@ -2819,175 +2686,234 @@ public _LoadSkins(id)
 		FROM `csgor_skins` WHERE `Name` = ^"%s^";", g_szName[id])
 	}
 
-	iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
+	SQL_ThreadQuery(g_hSqlTuple, "QueryPlayerLoadedSkins", szQuery, szData, iSize)
+}
 
-	if(!SQL_Execute(iQuery))
+public QueryPlayerLoadedSkins(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize, Float:flQueueTime)
+{
+	switch(iFailState)
 	{
-		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-		log_to_file("csgo_remake_errors.log", g_szSqlError)
-
-		return
-	}
-
-	new szTemp[5][MAX_SKINS * 3 + 94]
-	new weaponData[8]
-
-	if(!bFoundData)
-	{
-		if(SQL_NumResults(iQuery) > 0)
+		case TQUERY_CONNECT_FAILED: 
 		{
-			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Skins"), szTemp[0], charsmax(szTemp[]))
-
-			for (new j = 0; j < MAX_SKINS && szTemp[0][0] && strtok(szTemp[0], weaponData, charsmax(weaponData), szTemp[0], charsmax(szTemp[]), ','); j++)
-			{
-				g_iUserSkins[id][j] = str_to_num(weaponData)
-			}
-
-			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Stattrack Skins"), szTemp[1], charsmax(szTemp[]))
-
-			for (new j = 0; j < MAX_SKINS && szTemp[1][0] && strtok(szTemp[1], weaponData, charsmax(weaponData), szTemp[1], charsmax(szTemp[]), ','); j++)
-			{
-				g_iStattrackWeap[id][iWeap][j] = str_to_num(weaponData)
-			}
-
-			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Stattrack Kills"), szTemp[2], charsmax(szTemp[]))
-
-			for (new j = 0; j < MAX_SKINS && szTemp[2][0] && strtok(szTemp[2], weaponData, charsmax(weaponData), szTemp[2], charsmax(szTemp[]), ','); j++)
-			{
-				g_iStattrackWeap[id][iKillCount][j] = str_to_num(weaponData)
-			}
-
-			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Selected Stattrack"), szTemp[3], charsmax(szTemp[]))
-
-			for (new j = 1; j <= CSW_P90 && szTemp[3][0] && strtok(szTemp[3], weaponData, charsmax(weaponData), szTemp[3], charsmax(szTemp[]), ','); j++)
-			{
-				g_iStattrackWeap[id][iSelected][j] = str_to_num(weaponData)
-				g_iStattrackWeap[id][bStattrack][j] = str_to_num(weaponData) != -1 ? true : false
-			}
-
-			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Selected Skins"), szTemp[4], charsmax(szTemp[]))
-
-			for (new j = 1; j <= CSW_P90 && szTemp[4][0] && strtok(szTemp[4], weaponData, charsmax(weaponData), szTemp[4], charsmax(szTemp[]), ','); j++)
-			{
-				g_iUserSelectedSkin[id][j] = str_to_num(weaponData)
-			}
+			log_to_file("csgo_remake_errors.log", "[SQL Error] Connection failed (%i): %s", Errcode, Error)
+		}
+		case TQUERY_QUERY_FAILED:
+		{
+			log_to_file("csgo_remake_errors.log", "[SQL Error] Query failed (%i): %s", Errcode, Error)
 		}
 	}
 
-	SQL_FreeHandle(iQuery)
+	new szTemp[MAX_SKINS * 3 + 94], szDummy[9]
+	new weaponData[8]
+	new id = szData[0]
+	
+	if(SQL_NumResults(iQuery) > 0)
+	{
+		SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Skins"), szTemp, charsmax(szTemp))
+		formatex(szDummy, charsmax(szDummy), "%d-Ss", id)
+		TrieSetString(g_tDataTrie, szDummy, szTemp)
+
+		SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Stattrack Skins"), szTemp, charsmax(szTemp))
+		formatex(szDummy, charsmax(szDummy), "%d-SS", id)
+		TrieSetString(g_tDataTrie, szDummy, szTemp)
+
+		SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Stattrack Kills"), szTemp, charsmax(szTemp))
+		formatex(szDummy, charsmax(szDummy), "%d-SK", id)
+		TrieSetString(g_tDataTrie, szDummy, szTemp)
+
+		SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Selected Stattrack"), szTemp, charsmax(szTemp))
+		formatex(szDummy, charsmax(szDummy), "%d-SE", id)
+		TrieSetString(g_tDataTrie, szDummy, szTemp)
+
+		SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Selected Skins"), szTemp, charsmax(szTemp))
+		formatex(szDummy, charsmax(szDummy), "%d-Se", id)
+		TrieSetString(g_tDataTrie, szDummy, szTemp)
+
+		new TrieIter:tIterator = TrieIterCreate(g_tDataTrie)
+		new size = TrieIterGetSize(tIterator)
+
+		for(new i; i < size; i++)
+		{
+			tIterator = TrieIterCreate(g_tDataTrie)
+			TrieIterGetKey(tIterator, szDummy, charsmax(szDummy))
+
+			new szIndex[3], szKey[3]
+			strtok(szDummy, szIndex, charsmax(szIndex), szKey, charsmax(szKey), '-')
+
+			TrieIterGetString(tIterator, szTemp, charsmax(szTemp))
+
+			if(szKey[1] == 's' || szKey[1] == 'S' || szKey[1] == 'K')
+			{
+				for (new j = 0; j < MAX_SKINS && szTemp[0] && strtok(szTemp, weaponData, charsmax(weaponData), szTemp, charsmax(szTemp), ','); j++)
+				{
+					switch(szKey[1])
+					{
+						case 's':
+						{
+							g_iUserSkins[id][j] = str_to_num(weaponData)
+						}
+						case 'S':
+						{
+							g_iStattrackWeap[id][iWeap][j] = str_to_num(weaponData)
+						}
+						case 'K':
+						{
+							g_iStattrackWeap[id][iWeap][j] = str_to_num(weaponData)
+						}
+					}
+				}
+			}
+			else if(szKey[1] == 'e' || szKey[1] == 'E')
+			{
+				for (new j = 1; j <= CSW_P90 && szTemp[0] && strtok(szTemp, weaponData, charsmax(weaponData), szTemp, charsmax(szTemp), ','); j++)
+				{
+					switch(szKey[1])
+					{
+						case 'e':
+						{
+							g_iUserSelectedSkin[id][j] = str_to_num(weaponData)
+						}
+						case 'E':
+						{
+							g_iStattrackWeap[id][iSelected][j] = str_to_num(weaponData)
+							g_iStattrackWeap[id][bStattrack][j] = str_to_num(weaponData) != -1 ? true : false
+						}
+					}
+				}
+			}
+
+			if(!TrieDeleteKey(g_tDataTrie, szDummy))
+			{
+				#if defined DEBUG
+				log_to_file("csgor_debug_logs.log", "Failed deleting the Trie Key :%s", szDummy)
+				#endif
+			}
+			
+			TrieIterDestroy(tIterator)
+		}
+	}
+
+	client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DATA_LOADED")
+	g_bLoaded[id] = true
 }
 
 public _SaveData(id)
 {
-	new iWeapszBuffer[MAX_SKINS * 2 + 3]
-	new skinBuffer[MAX_SKINS * 2]
-	new szBuffer[MAX_SKINS * 2]
+	new szBuffer[MAX_SKINS * 2 + 3]
+	new szDummy[9], szName[MAX_NAME_LENGTH]
+	
+	copy(szName, charsmax(szName), g_szName[id])
 
-	formatex(iWeapszBuffer, charsmax(iWeapszBuffer), "%d", g_iUserSkins[id])
-
+	formatex(szBuffer, charsmax(szBuffer), "%d", g_iUserSkins[id])
+	formatex(szDummy, charsmax(szDummy), "%d-WB", id)
+	
 	for (new i = 1; i < MAX_SKINS; i++)
 	{
-		format(iWeapszBuffer, charsmax(iWeapszBuffer), "%s,%d", iWeapszBuffer, g_iUserSkins[id][i])
+		format(szBuffer, charsmax(szBuffer), "%s,%d", szBuffer, g_iUserSkins[id][i])
 	}
 
-	formatex(skinBuffer, charsmax(skinBuffer), "%d", g_iUserSelectedSkin[id][1])
-	formatex(szBuffer, charsmax(szBuffer), "%d", g_iStattrackWeap[id][iSelected][1])
+	TrieSetString(g_tDataTrie, szDummy, szBuffer)
+
+	formatex(szBuffer, charsmax(szBuffer), "%d", g_iUserSelectedSkin[id][1])
+	formatex(szDummy, charsmax(szDummy), "%d-SB", id)
 
 	for (new i = 2; i <= CSW_P90; i++)
 	{
-		format(skinBuffer, charsmax(skinBuffer), "%s,%d", skinBuffer, g_iUserSelectedSkin[id][i])
+		format(szBuffer, charsmax(szBuffer), "%s,%d", szBuffer, g_iUserSelectedSkin[id][i])
+	}
+
+	TrieSetString(g_tDataTrie, szDummy, szBuffer)
+
+	formatex(szBuffer, charsmax(szBuffer), "%d", g_iStattrackWeap[id][iSelected][1])
+	formatex(szDummy, charsmax(szDummy), "%d-EB", id)
+
+	for (new i = 2; i <= CSW_P90; i++)
+	{
 		format(szBuffer, charsmax(szBuffer), "%s,%d", szBuffer, g_iStattrackWeap[id][iSelected][i])
 	}
 
-	switch(g_iCvars[iSaveType])
-	{
-		case NVAULT:
-		{
-			g_szData[0] = 0
-			new infoBuffer[MAX_SKIN_NAME]
-			formatex(infoBuffer, charsmax(infoBuffer), "%s=%s,%s;%d,%d,%d,%d,%d,%d", g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id])
+	TrieSetString(g_tDataTrie, szDummy, szBuffer)
 
-			formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoBuffer, iWeapszBuffer, skinBuffer)
-			nvault_set(g_Vault, g_szName[id], g_szData)
+	new szQuery[MAX_SKINS * 3 + 94]
+	new iTimestamp
 
-			task_update_stattrack(id, szBuffer, .iType = NVAULT)
-		}
-		case MYSQL:
-		{
-			new szQuery[MAX_SKINS * 3 + 94]
-			new iTimestamp
+	IsTaken(id, iTimestamp)
 
-			IsTaken(id, iTimestamp)
+	formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
+	SET `SteamID`=^"%s^", \
+	`Last IP`=^"%s^", \
+	`Password`=^"%s^", \
+	`ChatTag`=^"%s^", \
+	`ChatTag Color`=^"%s^", \
+	`Points`='%i', \
+	`Scraps`='%i', \
+	`Keys`='%i', \
+	`Cases`='%i', \
+	`Kills`='%i', \
+	`Rank`='%i', \
+	`Bonus Timestamp`='%i', \
+	`Promocode`='%i' \
+	WHERE `Name`=^"%s^";", g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id], iTimestamp, g_iPromoCount[id], g_szName[id])
 
-			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
-			SET `SteamID`=^"%s^", \
-			`Last IP`=^"%s^", \
-			`Password`=^"%s^", \
-			`ChatTag`=^"%s^", \
-			`ChatTag Color`=^"%s^", \
-			`Points`='%i', \
-			`Scraps`='%i', \
-			`Keys`='%i', \
-			`Cases`='%i', \
-			`Kills`='%i', \
-			`Rank`='%i', \
-			`Bonus Timestamp`='%i', \
-			`Promocode`='%i' \
-			WHERE `Name`=^"%s^";", g_szSteamID[id], g_szUserLastIP[id], g_szUser_SavedPass[id], g_szUserPrefix[id], g_szUserPrefixColor[id], g_iUserPoints[id], g_iUserDusts[id], g_iUserKeys[id], g_iUserCases[id], g_iUserKills[id], g_iUserRank[id], iTimestamp, g_iPromoCount[id], g_szName[id])
+	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
-			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
+	formatex(szDummy, charsmax(szDummy), "%d-WB", id)
+	TrieGetString(g_tDataTrie, szDummy, szBuffer, charsmax(szBuffer))
 
-			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
-			SET `Skins`=^"%s^", \
-			`Selected Stattrack`=^"%s^", \
-			`Selected Skins`=^"%s^" \
-			WHERE `Name`=^"%s^";", iWeapszBuffer, szBuffer, skinBuffer, g_szName[id])
+	formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
+	SET `Skins`=^"%s^" \
+	WHERE `Name`=^"%s^";", szBuffer, g_szName[id])
 
-			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
+	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
-			task_update_stattrack(id, "0", .iType = MYSQL)
+	formatex(szDummy, charsmax(szDummy), "%d-SB", id)
+	TrieGetString(g_tDataTrie, szDummy, szBuffer, charsmax(szBuffer))
 
-		}
-	}
+	formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
+	SET `Selected Stattrack`=^"%s^" \
+	WHERE `Name`=^"%s^";", szBuffer, g_szName[id])
+
+	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
+
+	formatex(szDummy, charsmax(szDummy), "%d-EB", id)
+	TrieGetString(g_tDataTrie, szDummy, szBuffer, charsmax(szBuffer))
+
+	formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
+	SET `Selected Skins`=^"%s^" \
+	WHERE `Name`=^"%s^";", szBuffer, g_szName[id])
+
+	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
+
+	task_update_stattrack(id, .iType = MYSQL)
 
 	return PLUGIN_HANDLED
 }
 
-public task_update_stattrack(id, szPassed[MAX_SKINS * 2], iType)
+public task_update_stattrack(id, iType)
 {
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "task_update_stattrack()")
 	#endif
 
-	new szQuery[MAX_SKINS * 2 + 94]
-	new szStattrack[MAX_SKINS * 2 + 3]
+	new szTemp[MAX_SKINS * 2 + 94]
+	new szDummy[9]
 
-	formatex(szStattrack, charsmax(szStattrack), "%d", g_iStattrackWeap[id][iWeap])
+	formatex(szTemp, charsmax(szTemp), "%d", g_iStattrackWeap[id][iWeap])
 
 	for (new i = 1; i < MAX_SKINS; i++)
 	{
-		format(szStattrack, charsmax(szStattrack), "%s,%d", szStattrack, g_iStattrackWeap[id][iWeap][i])
+		format(szTemp, charsmax(szTemp), "%s,%d", szTemp, g_iStattrackWeap[id][iWeap][i])
 	}
 
-	switch(iType)
-	{
-		case NVAULT:
-		{
-			formatex(szQuery, charsmax(szQuery), "%s#%s", szStattrack, szPassed)
+	formatex(szDummy, charsmax(szDummy), "%d-WS", id)
+	TrieSetString(g_tDataTrie, szDummy, szTemp)
 
-			task_update_stattrack_kills(id, szQuery, NVAULT)
-		}
-		case MYSQL:
-		{
-			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
-			SET `Stattrack Skins`=^"%s^" \
-			WHERE `Name`=^"%s^";", szStattrack, g_szName[id])
+	format(szTemp, charsmax(szTemp), "UPDATE `csgor_skins` \
+	SET `Stattrack Skins`=^"%s^" \
+	WHERE `Name`=^"%s^";", szTemp, g_szName[id])
+	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szTemp)
 
-			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
-
-			task_update_stattrack_kills(id, "0", .iType = MYSQL)
-		}
-	}
+	task_update_stattrack_kills(id, .iType = MYSQL)
 }
 
 public QueryHandler(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize, Float:flQueueTime)
@@ -3005,7 +2931,7 @@ public QueryHandler(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize
 	}
 }
 
-public task_update_stattrack_kills(id, szPassed[MAX_SKINS * 2 + 94], iType)
+public task_update_stattrack_kills(id, iType)
 {
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "task_update_stattrack_kills()")
@@ -3020,23 +2946,15 @@ public task_update_stattrack_kills(id, szPassed[MAX_SKINS * 2 + 94], iType)
 		format(szStattrack, charsmax(szStattrack), "%s,%d", szStattrack, g_iStattrackWeap[id][iKillCount][i])
 	}
 
-	switch(iType)
-	{
-		case NVAULT:
-		{
-			formatex(szQuery, charsmax(szQuery), "%s*%s", szPassed, szStattrack)
+	new szDummy[9]
+	formatex(szDummy, charsmax(szDummy), "%d-EB", id)
+	TrieGetString(g_tDataTrie, szDummy, szQuery, charsmax(szQuery))
 
-			nvault_set(g_sVault, g_szName[id], szQuery)
-		}
-		case MYSQL:
-		{
-			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins`\
-			SET `Stattrack Kills`=^"%s^"\
-			WHERE `Name`=^"%s^";", szStattrack, g_szName[id])
+	formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins`\
+	SET `Stattrack Kills`=^"%s^"\
+	WHERE `Name`=^"%s^";", szStattrack, g_szName[id])
 
-			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
-		}
-	}
+	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 }
 
 public _ShowRegMenu(id)
@@ -3135,10 +3053,7 @@ public reg_menu_handler(id, menu, item)
 		{
 			_Load(id)
 
-			if(g_iCvars[iSaveType] == MYSQL)
-			{
-				_LoadSkins(id)
-			}
+			_LoadSkins(id)
 
 			new spLen = strlen(g_szUser_SavedPass[id])
 
@@ -3155,7 +3070,7 @@ public reg_menu_handler(id, menu, item)
 				_ShowRegMenu(id)
 				ExecuteForward(g_iForwards[ user_pass_fail ], g_iForwardResult, id, g_iUserPassFail[id])
 			}
-			else if(equal(g_szUserPassword[id], g_szUser_SavedPass[id], spLen))
+			else
 			{
 				g_bLogged[id] = true
 				_ShowMainMenu(id)
@@ -3184,10 +3099,7 @@ public reg_menu_handler(id, menu, item)
 
 				_Load(id)
 
-				if(g_iCvars[iSaveType] == MYSQL)
-				{
-					_LoadSkins(id)
-				}
+				_LoadSkins(id)
 
 				_ShowMainMenu(id)
 
@@ -3418,7 +3330,7 @@ public _ShowPreviewMenu(id)
 
 		formatex(szTemp, charsmax(szTemp), "%s", weapons[ItemName])
 
-		menu_additem(menu, szTemp, weapons[ItemID])
+		menu_additem(menu, szTemp, weapons[ItemId])
 	}
 
 	_DisplayMenu(id, menu)
@@ -3460,6 +3372,12 @@ public _ShowMainMenu(id)
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "_ShowMainMenu()")
 	#endif
+
+	if(!g_bLoaded[id])
+	{
+		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_LOADING_DATA")
+		return
+	}
 
 	new temp[96], MenuInfo[EnumDynamicMenu]
 
@@ -3650,8 +3568,8 @@ public _ShowNormalSkinsMenu(id)
 	{
 		ArrayGetArray(g_aSkinsMenu, i, weapons)
 
-		formatex(szTemp, charsmax(szTemp), "%s [\r%d\w/\r%d\w]", weapons[ItemName], GetUserSkinsNum(id, str_to_num(weapons[ItemID])), GetMaxSkins(str_to_num(weapons[ItemID])))
-		menu_additem(menu, szTemp, weapons[ItemID])
+		formatex(szTemp, charsmax(szTemp), "%s [\r%d\w/\r%d\w]", weapons[ItemName], GetUserSkinsNum(id, str_to_num(weapons[ItemId])), GetMaxSkins(str_to_num(weapons[ItemId])))
+		menu_additem(menu, szTemp, weapons[ItemId])
 	}
 
 	_DisplayMenu(id, menu)
@@ -3704,8 +3622,8 @@ public _ShowStattrackSkinsMenu(id)
 	{
 		ArrayGetArray(g_aSkinsMenu, i, weapons)
 
-		formatex(szTemp, charsmax(szTemp), "\y(StatTrack)\w %s [\r%d\w/\r%d\w]", weapons[ItemName], GetUserSkinsNum(id, str_to_num(weapons[ItemID]), true), GetMaxSkins(str_to_num(weapons[ItemID])))
-		menu_additem(menu, szTemp, weapons[ItemID])
+		formatex(szTemp, charsmax(szTemp), "\y(StatTrack)\w %s [\r%d\w/\r%d\w]", weapons[ItemName], GetUserSkinsNum(id, str_to_num(weapons[ItemId]), true), GetMaxSkins(str_to_num(weapons[ItemId])))
+		menu_additem(menu, szTemp, weapons[ItemId])
 	}
 
 	_DisplayMenu(id, menu)
@@ -5551,7 +5469,7 @@ public _ShowBonusMenu(id)
 	#endif
 
 	new bool:bShow = false
-	new iTimestamp, szVal[ 10 ]
+	new iTimestamp
 	new szCheckData[35]
 	new iNum = g_iCvars[iCheckBonusType]
 
@@ -5566,51 +5484,38 @@ public _ShowBonusMenu(id)
 			copy(szCheckData, charsmax(szCheckData), g_szSteamID[id])
 		}
 	}
-
-	switch(g_iCvars[iSaveType])
+		
+	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `%s` = ^"%s^";", iNum == 0 ? "Last IP" : "SteamID", szCheckData)
+	
+	if(!SQL_Execute(iQuery))
 	{
-		case NVAULT:
+		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+		log_to_file("csgo_remake_errors.log", "SQL Error: %s", g_szSqlError)
+		SQL_FreeHandle(iQuery)
+	}
+
+	if(SQL_NumResults(iQuery) > 0)
+	{
+		for(new i; i < SQL_NumResults(iQuery); i++)
 		{
-			if(!nvault_lookup( g_nVault , szCheckData , szVal , charsmax( szVal ) , iTimestamp ) || ( iTimestamp && ( ( get_systime() - iTimestamp ) >= ((60 * 60) * g_iCvars[iTimeDelete]))))
+			iTimestamp = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Bonus Timestamp"))
+
+			if(get_systime() - iTimestamp <= (60 * 60 * g_iCvars[iTimeDelete]))
 			{
-				bShow = true
-			}
-		}
-		case MYSQL:
-		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `%s` = ^"%s^";", iNum == 0 ? "Last IP" : "SteamID", szCheckData)
-			
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", "SQL Error: %s", g_szSqlError)
-				SQL_FreeHandle(iQuery)
+				new szQuery[128]
+				formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
+					SET `Bonus Timestamp`=^"%d^" \
+					WHERE `Name`=^"%s^";", iTimestamp, g_szName[id])
+
+				SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
+
+				bShow = false
+				break
 			}
 
-			if(SQL_NumResults(iQuery) > 0)
-			{
-				for(new i; i < SQL_NumResults(iQuery); i++)
-				{
-					iTimestamp = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Bonus Timestamp"))
+			bShow = true
 
-					if(get_systime() - iTimestamp <= (60 * 60 * g_iCvars[iTimeDelete]))
-					{
-						new szQuery[128]
-						formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
-							SET `Bonus Timestamp`=^"%d^" \
-							WHERE `Name`=^"%s^";", iTimestamp, g_szName[id])
-
-						SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
-
-						bShow = false
-						break
-					}
-
-					bShow = true
-
-					SQL_NextRow(iQuery)
-				}
-			}
+			SQL_NextRow(iQuery)
 		}
 	}
 
@@ -5720,22 +5625,12 @@ public bonus_menu_handler(id, menu, item)
 
 	if(bBonus)
 	{
-		switch(g_iCvars[iSaveType])
-		{
-			case NVAULT:
-			{
-				nvault_set( g_nVault, g_iCvars[iCheckBonusType] == 0 ? g_szUserLastIP[id] : g_szSteamID[id], "bonus_csgo" )
-			}
-			case MYSQL:
-			{
-				new szQuery[128]
-				formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
-					SET `Bonus Timestamp`=^"%d^" \
-					WHERE `Name`=^"%s^";", get_systime(), g_szName[id])
+		new szQuery[128]
+		formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` \
+			SET `Bonus Timestamp`=^"%d^" \
+			WHERE `Name`=^"%s^";", get_systime(), g_szName[id])
 
-				SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
-			}
-		}
+		SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 	}
 	return PLUGIN_HANDLED
 }
@@ -8105,10 +8000,6 @@ public promocode_menu_handler(id, menu, item)
 
 						g_iPromoCount[id] = 1
 
-						if(g_iCvars[iSaveType] == NVAULT)
-						{
-							_SavePromocodes(id)
-						}
 						break
 					}
 					else if(equal(szPromocodeGift, "c"))
@@ -8121,10 +8012,6 @@ public promocode_menu_handler(id, menu, item)
 						_ShowPromocodeMenu(id)
 						g_iPromoCount[id] = 1
 
-						if(g_iCvars[iSaveType] == NVAULT)
-						{
-							_SavePromocodes(id)
-						}
 						break
 					}
 					else if(equal(szPromocodeGift, "s"))
@@ -8141,10 +8028,6 @@ public promocode_menu_handler(id, menu, item)
 
 						g_iPromoCount[id] = 1
 
-						if(g_iCvars[iSaveType] == NVAULT)
-						{
-							_SavePromocodes(id)
-						}
 						break
 					}
 
@@ -8159,42 +8042,6 @@ public promocode_menu_handler(id, menu, item)
 	}
 
 	return _MenuExit(menu)
-}
-
-public _SavePromocodes(id)
-{
-	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "_SavePromocodes()")
-	#endif
-
-	if(g_iCvars[iSaveType] == NVAULT)
-	{	
-		new szVaultData[64]
-		
-		formatex( szVaultData, charsmax(szVaultData), "%i", g_iPromoCount[id])
-		nvault_set(g_pVault, g_szName[id], szVaultData)
-	}
-}
-
-public _LoadPromocodes(id)
-{
-	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "_LoadPromocodes()")
-	#endif
-
-	if(g_iCvars[iSaveType] == NVAULT)
-	{
-		new szVaultData[64]
-		
-		formatex(szVaultData, charsmax(szVaultData), "%i", g_iPromoCount[id])
-		nvault_get(g_pVault, g_szName[id], szVaultData, charsmax(szVaultData))
-		
-		new promo[32]
-
-		parse(szVaultData, promo, charsmax(promo))
-
-		g_iPromoCount[id] = str_to_num(promo)
-	}
 }
 
 public _ShowCoinflipMenu(id)
@@ -10344,82 +10191,48 @@ public concmd_finddata(id, level, cid)
 	new userData[6]
 	new password[32]
 
-	switch(g_iCvars[iSaveType])
+	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", arg1)
+	
+	if(!SQL_Execute(iQuery))
 	{
-		case NVAULT:
+		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+		log_to_file("csgo_remake_errors.log", "test %s", g_szSqlError)
+		SQL_FreeHandle(iQuery)
+	}
+
+	if(SQL_NumResults(iQuery) > 0)
+	{
+		new szQuery[512]
+		formatex(szQuery, charsmax(szQuery), "SELECT \
+				`Password`,\
+				`Points`,\
+				`Scraps`,\
+				`Keys`,\
+				`Cases`,\
+				`Kills`,\
+				`Rank`\
+				FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
+
+		iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
+
+		if(!SQL_Execute(iQuery))
 		{
-			if (g_Vault == INVALID_HANDLE)
-			{
-				console_print(id, "%s Reading from vault has failed !", CSGO_TAG)
-				return PLUGIN_HANDLED
-			}
-
-			new Data[64]
-			new Timestamp
-
-			if (nvault_lookup(g_Vault, arg1, Data, charsmax(Data), Timestamp))
-			{
-				new pData[6][16]
-				new szBuffer[48]
-				strtok(Data, password, charsmax(password), Data, charsmax(Data), '=')
-				strtok(Data, szBuffer, charsmax(szBuffer), Data, charsmax(Data), '*')
-				replace_all(szBuffer, charsmax(szBuffer), ",;", "")
-
-				for (new i; i < sizeof pData; i++)
-				{
-					strtok(szBuffer, pData[i], charsmax(pData[]), szBuffer, charsmax(szBuffer), ',')
-					userData[i] = str_to_num(pData[i])
-				}
-
-				bFound = true
-			}
+			SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+			log_to_file("csgo_remake_errors.log", "test2 %s", g_szSqlError)
 		}
-		case MYSQL:
+
+		if(SQL_NumResults(iQuery) > 0)
 		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", arg1)
-			
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", "test %s", g_szSqlError)
-				SQL_FreeHandle(iQuery)
-			}
-
-			if(SQL_NumResults(iQuery) > 0)
-			{
-				new szQuery[512]
-				formatex(szQuery, charsmax(szQuery), "SELECT \
-   					`Password`,\
-   					`Points`,\
-   					`Scraps`,\
-   					`Keys`,\
-   					`Cases`,\
-   					`Kills`,\
-   					`Rank`\
-   					FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
-
-	   			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
-
-	   			if(!SQL_Execute(iQuery))
-				{
-					SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-					log_to_file("csgo_remake_errors.log", "test2 %s", g_szSqlError)
-				}
-
-				if(SQL_NumResults(iQuery) > 0)
-				{
-					SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Password"), password, charsmax(password))
-					userData[0] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Points"))
-					userData[1] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Scraps"))
-					userData[2] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Keys"))
-					userData[3] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Cases"))
-					userData[4] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Kills"))
-					userData[5] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Rank"))
-				}
-
-				bFound = true
-			}
+			SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Password"), password, charsmax(password))
+			userData[0] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Points"))
+			userData[1] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Scraps"))
+			userData[2] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Keys"))
+			userData[3] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Cases"))
+			userData[4] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Kills"))
+			userData[5] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Rank"))
 		}
+
+		bFound = true
 	}
 
 	if(bFound)
@@ -10451,6 +10264,8 @@ public concmd_resetdata(id, level, cid)
 	new arg2[4]
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
+	// TODO: REWORK FOR SQL
+	/*
 	new type = str_to_num(arg2)
 
 	if (g_Vault == INVALID_HANDLE)
@@ -10514,7 +10329,7 @@ public concmd_resetdata(id, level, cid)
 	else
 	{
 		console_print(id, "%s The account was not found: %s", CSGO_TAG, arg1)
-	}
+	}*/
 
 	return PLUGIN_HANDLED
 }
@@ -10796,11 +10611,6 @@ public concmd_promocode(id)
 		return PLUGIN_HANDLED
 	}
 
-	if(g_iCvars[iSaveType] == NVAULT)
-	{
-		_LoadPromocodes(id)
-	}
-
 	g_szUserPromocode[id] = data
 	_ShowPromocodeMenu(id)
 
@@ -10928,6 +10738,17 @@ public concmd_betyellow(id)
 		_RoulettePlay()
 
 	return PLUGIN_HANDLED
+}
+
+public RG_CBasePlayer_ImpulseCommands_Post(id)
+{
+	if(!is_user_connected(id))
+		return 
+
+	if(get_entvar(id, var_impulse) == 100)
+	{
+		inspect_weapon(id)
+	}
 }
 
 public inspect_weapon(id)
@@ -11444,40 +11265,20 @@ bool:IsRegistered(id)
 	log_to_file("csgor_debug_logs.log", "IsRegistered()")
 	#endif
 
-	switch(g_iCvars[iSaveType])
+	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
+	
+	if(!SQL_Execute(iQuery))
 	{
-		case NVAULT:
-		{
-			g_szData[0] = 0
-			new Timestamp
-
-			if (nvault_lookup(g_Vault, g_szName[id], g_szData, charsmax(g_szData), Timestamp))
-			{
-				return true
-			}
-
-			return false
-		}
-		case MYSQL:
-		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
-			
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", g_szSqlError)
-				SQL_FreeHandle(iQuery)
-			}
-
-			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? true : false
-
-			SQL_FreeHandle(iQuery)
-
-			return bFoundData
-		}
+		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+		log_to_file("csgo_remake_errors.log", g_szSqlError)
+		SQL_FreeHandle(iQuery)
 	}
 
-	return false
+	new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? true : false
+
+	SQL_FreeHandle(iQuery)
+
+	return bFoundData
 }
 
 _MenuExit(menu)
@@ -11604,35 +11405,19 @@ IsTaken(id, &iTimestamp)
 	log_to_file("csgor_debug_logs.log", "IsTaken()")
 	#endif
 
-	switch(g_iCvars[iSaveType])
+	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
+	
+	if(!SQL_Execute(iQuery))
 	{
-		case NVAULT:
-		{
-			new g_szData[24]
-			if (nvault_lookup(g_Vault, g_szName[id], g_szData, charsmax(g_szData), iTimestamp))
-			{
-				return PLUGIN_HANDLED
-			}
-		}
-		case MYSQL:
-		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^";", g_szName[id])
-			
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file("csgo_remake_errors.log", g_szSqlError)
-				SQL_FreeHandle(iQuery)
-			}
-
-			iTimestamp = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Bonus Timestamp"))
-
-			SQL_FreeHandle(iQuery)
-
-			return PLUGIN_HANDLED
-		}
+		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+		log_to_file("csgo_remake_errors.log", g_szSqlError)
+		SQL_FreeHandle(iQuery)
 	}
-	return PLUGIN_CONTINUE
+
+	iTimestamp = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Bonus Timestamp"))
+
+	SQL_FreeHandle(iQuery)
+
 }
 
 _Send_DeathMsg(killer, victim, hs, weapon[])
