@@ -22,7 +22,7 @@
 #pragma dynamic MAX_SKINS * 17
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.3.0"
+#define VERSION "2.3.1"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -4487,7 +4487,7 @@ DeployWeaponSwitch(iPlayer)
 		{
 			ArrayGetString(g_aSkinModelP, imp - 1, model, charsmax(model))
 
-			set_pev(iPlayer, pev_viewmodel2, model)
+			set_pev(iPlayer, pev_weaponmodel2, model)
 		}
 	}
 	else
@@ -4525,7 +4525,7 @@ DeployWeaponSwitch(iPlayer)
 				if (g_bSkinHasModelP[userskin])
 				{
 					ArrayGetString(g_aSkinModelP, userskin, model, charsmax(model))
-					set_pev(iPlayer, pev_viewmodel2, model)
+					set_pev(iPlayer, pev_weaponmodel2, model)
 				}
 			}
 		}
