@@ -111,8 +111,6 @@
 #define weaponsNotVaild					((1<<CSW_C4) | (1<<CSW_HEGRENADE) | (1<<CSW_FLASHBANG) | (1<<CSW_SMOKEGRENADE) | (1<<CSW_KNIFE))
 #define MISC_ITEMS						((1<<CSI_DEFUSER) | (1<<CSI_NVGS) | (1<<CSI_PRIAMMO) | (1<<CSI_SECAMMO) | (1<<CSI_VEST) | (1<<CSI_VESTHELM))
 
-#define PDATA_SAFE						2
-
 #define EVENT_SVC_INTERMISSION			"30"
 
 /* ----------------------- TASKIDs ----------------------- */
@@ -2021,7 +2019,7 @@ public Ham_Take_Damage_Post( iVictim, inf, iAttacker, Float:iDamage )
 
 	new weapon = GetPlayerActiveItem(iAttacker)
 	
-	if(pev_valid(iAttacker) != PDATA_SAFE || pev_valid(weapon) != PDATA_SAFE)
+	if(is_nullent(iAttacker) || is_nullent(weapon))
 		return HAM_IGNORED
 	
 	if ( g_iCvars[iSilentWeapDamage] )
@@ -4227,10 +4225,8 @@ public HamF_TraceAttack_Post(iEnt, iAttacker, Float:damage, Float:fDir[3], ptr, 
 	log_to_file("csgor_debug_logs.log", "HamF_TraceAttack_Post()")
 	#endif
 
-	if(pev_valid(iAttacker) != PDATA_SAFE)
-	{
-		return HAM_IGNORED
-	}
+	if(is_nullent(iAttacker))
+		return
 
 	new iWeapon
 	static Float:vecEnd[3]
@@ -4239,8 +4235,8 @@ public HamF_TraceAttack_Post(iEnt, iAttacker, Float:damage, Float:fDir[3], ptr, 
 	
 	new iWeaponEnt = GetWeaponEntity(iWeapon)
 
-	if(!pev_valid(iWeaponEnt) || !iWeaponEnt || iWeaponEnt == CSW_KNIFE)
-		return HAM_IGNORED
+	if(is_nullent(iWeaponEnt) || !iWeaponEnt || iWeaponEnt == CSW_KNIFE)
+		return
 
 	get_tr2(ptr, TR_vecEndPos, vecEnd)
 
@@ -4252,8 +4248,6 @@ public HamF_TraceAttack_Post(iEnt, iAttacker, Float:damage, Float:fDir[3], ptr, 
 	write_short(iEnt)
 	write_byte(random_num(41, 45))
 	message_end()
-
-	return HAM_IGNORED
 }
 
 public Ham_Weapon_Secondary_Pre(ent)
@@ -4269,7 +4263,7 @@ public Ham_Weapon_Secondary_Pre(ent)
 
 	id = GetEntityOwner(ent)
 
-	if (pev_valid(id) != PDATA_SAFE || !is_user_alive(id))
+	if (is_nullent(id) || !is_user_alive(id))
 		return HAM_IGNORED
 	
 	new weapon = GetPlayerActiveItem(id)
@@ -4331,7 +4325,7 @@ public FM_Hook_PlayBackEvent_Primary_Pre(iFlags, id, eventid, Float:delay, Float
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "FM_Hook_PlayBackEvent_Primary_Pre()")
 	#endif
-	if(!is_user_connected(id) || pev_valid(id) != PDATA_SAFE || !IsPlayer(id) || !g_bGEventID[eventid])
+	if(!is_user_connected(id) || is_nullent(id) || !IsPlayer(id) || !g_bGEventID[eventid])
 		return FMRES_IGNORED
 
 	new iEnt = get_user_weapon(id)
@@ -4350,7 +4344,7 @@ DeployWeaponSwitch(iPlayer)
 
 	new weapon = GetPlayerActiveItem(iPlayer)
 
-	if (!weapon || !pev_valid(weapon))
+	if (!weapon || is_nullent(weapon))
 		return
 
 	weaponid = GetWeaponEntity(weapon)
@@ -10419,7 +10413,7 @@ public clcmd_say_skin(id)
 
 	new iActiveItem = GetPlayerActiveItem(player)
 
-	if(pev_valid(iActiveItem) != PDATA_SAFE)
+	if(is_nullent(iActiveItem))
 	{
 		return PLUGIN_HANDLED
 	}
@@ -10634,13 +10628,13 @@ public inspect_weapon(id)
 	log_to_file("csgor_debug_logs.log", "inspect_weapon()")
 	#endif
 
-	if (pev_valid(id) != PDATA_SAFE || !is_user_alive(id) || cs_get_user_shield(id) || cs_get_user_zoom(id) > 1) return PLUGIN_HANDLED
+	if (is_nullent(id) || !is_user_alive(id) || cs_get_user_shield(id) || cs_get_user_zoom(id) > 1) return PLUGIN_HANDLED
 
 	
 	new weapon = GetPlayerActiveItem(id)
 	new weaponId = GetWeaponEntity(weapon)
 	
-	if(weaponsWithoutInspectSkin & (1<<weaponId) || pev_valid(weapon) != PDATA_SAFE || get_member(weapon, m_Weapon_fInReload))
+	if(weaponsWithoutInspectSkin & (1<<weaponId) || is_nullent(weapon) || get_member(weapon, m_Weapon_fInReload))
 		return PLUGIN_HANDLED
 
 	new animation = inspectAnimation[weaponId]
@@ -10673,7 +10667,7 @@ public WeaponShootInfo2(iPlayer, iEnt, iAnim, const szSoundEmpty[], const szSoun
 	log_to_file("csgor_debug_logs.log", "WeaponShootInfo2()")
 	#endif
 
-	if(!is_user_connected(iPlayer) || pev_valid(iPlayer) != PDATA_SAFE || !IsPlayer(iPlayer))
+	if(!is_user_connected(iPlayer) || is_nullent(iPlayer) || !IsPlayer(iPlayer))
 		return
 
 	new iWeaponID, iClip
@@ -11794,7 +11788,7 @@ WeaponDrawAnim(iEntity)
 	log_to_file("csgor_debug_logs.log", "WeaponDrawAnim()")
 	#endif
 
-	if(!pev_valid(GetWeaponEntity(iEntity)))
+	if(is_nullent(GetWeaponEntity(iEntity)))
 		return -1
 
 	static DrawAnim, WeaponState:mWeaponState
