@@ -3850,7 +3850,7 @@ public skin_menu_handler(id, menu, item)
 
 			weapon = GetWeaponEntity(iActiveItem)
 
-			if(is_nullent(weapon))
+			if(!IsValidWeapon(weapon))
 				return _MenuExit(menu)
 
 			change_skin(id, weapon)
@@ -4235,7 +4235,7 @@ public HamF_TraceAttack_Post(iEnt, iAttacker, Float:damage, Float:fDir[3], ptr, 
 	
 	new iWeaponEnt = GetWeaponEntity(iWeapon)
 
-	if(is_nullent(iWeaponEnt) || !iWeaponEnt || iWeaponEnt == CSW_KNIFE)
+	if(!IsValidWeapon(iWeaponEnt) || !iWeaponEnt || iWeaponEnt == CSW_KNIFE)
 		return
 
 	get_tr2(ptr, TR_vecEndPos, vecEnd)
@@ -4344,7 +4344,7 @@ DeployWeaponSwitch(iPlayer)
 
 	new weapon = GetPlayerActiveItem(iPlayer)
 
-	if (!weapon || is_nullent(weapon))
+	if (is_nullent(weapon))
 		return
 
 	weaponid = GetWeaponEntity(weapon)
@@ -4445,7 +4445,7 @@ public RG_CBasePlayer_DropPlayerItem_Pre(id)
 	
 	new weapon = GetWeaponEntity(ent)
 
-	if (weapon < 1 || weapon > 30 || (1 << weapon) & weaponsNotVaild)
+	if (!IsValidWeapon(weapon) || (1 << weapon) & weaponsNotVaild)
 		return
 
 	new imp = pev(ent, pev_impulse)
@@ -10655,7 +10655,7 @@ public inspect_weapon(id)
 
 	g_eEnumBooleans[id][IsInInspect] = true
 
-	set_member(weapon, m_flTimeWeaponIdle, 6.5)
+	set_member(id, m_flTimeWeaponIdle, 6.5)
 	SendWeaponAnim(id, animation)
 
 	return PLUGIN_HANDLED
@@ -11744,7 +11744,7 @@ SendWeaponAnim(iPlayer, iAnim = 0)
 
 	static iCount, iSpectator, iszSpectators[MAX_PLAYERS]
 
-	new iWeapon = get_member(iPlayer, m_pActiveItem)
+	new iWeapon = GetPlayerActiveItem(iPlayer)
 
 	if(is_nullent(iWeapon))
 		return
@@ -11788,7 +11788,7 @@ WeaponDrawAnim(iEntity)
 	log_to_file("csgor_debug_logs.log", "WeaponDrawAnim()")
 	#endif
 
-	if(is_nullent(GetWeaponEntity(iEntity)))
+	if(is_nullent(iEntity))
 		return -1
 
 	static DrawAnim, WeaponState:mWeaponState
@@ -11869,6 +11869,14 @@ GetEntityOwner(iEnt)
 	#endif
 
 	return get_member(iEnt, m_pPlayer)
+}
+
+bool:IsValidWeapon(iWeapon)
+{
+	if(iWeapon < 1 || iWeapon > 30)
+		return false
+
+	return true
 }
 
 GetWeaponEntity(iEnt)
