@@ -22,7 +22,7 @@
 #pragma dynamic MAX_SKINS * 17
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.3.1"
+#define VERSION "2.3.2"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -34,8 +34,6 @@
 #define GetPlayerBit(%0,%1) 			( IsPlayer(%1) && ( %0 & ( 1 << ( %1 & 31 ) ) ) )
 #define SetPlayerBit(%0,%1) 			( IsPlayer(%1) && ( %0 |= ( 1 << ( %1 & 31 ) ) ) )
 #define ClearPlayerBit(%0,%1) 			( %0 &= ~( 1 << ( %1 & 31 ) ) )
-
-#define OBS_IN_EYE 						4
 
 #define WEAPONTYPE_ELITE 				1
 #define WEAPONTYPE_GLOCK18				2
