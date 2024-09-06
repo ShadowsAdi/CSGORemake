@@ -10348,30 +10348,65 @@ public concmd_changepass(id, level, cid)
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
 
-	new target = cmd_target(id, arg1, CMDTARGET_ALLOW_SELF)
-
-	if (!target)
+	if (strlen(arg2) < 6)
 	{
-		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND", arg1)
+		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_PASSWORD_SHORT", arg2)
 		return PLUGIN_HANDLED
 	}
-	
-	new len = strlen(g_szUser_SavedPass[target])
 
-	if (len > 6)
-	{
-		copy(g_szUser_SavedPass[target], charsmax(g_szUser_SavedPass[]), arg2)
-		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_PASSWORD_CHANGED", target, arg2)
-		client_print_color(target, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_CHANGED_PASSWORD", g_szName[id], arg2)
-	}
-	else
-	{
-		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_T_NOT_FOUND_IN_DBASE", target)
-	}
+	new szQuery[95]
+	formatex(szQuery, charsmax(szQuery), "SELECT `Password` FROM `csgor_data` WHERE `Name` = ^"%s^";", arg1)
 
-	_Save(target)
+	new szData[35 + MAX_NAME_LENGTH]
+	formatex(szData, charsmax(szData), "%d;%s=%s", id, arg1, arg2)
+
+	SQL_ThreadQuery(g_hSqlTuple, "QueryPlayerChangePW", szQuery, szData, charsmax(szData))
 
 	return PLUGIN_HANDLED
+}
+
+public QueryPlayerChangePW(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize, Float:flQueueTime)
+{
+	switch(iFailState)
+	{
+		case TQUERY_CONNECT_FAILED: 
+		{
+			log_to_file("csgo_remake_errors.log", "[SQL Error] Connection failed (%i): %s", Errcode, Error)
+		}
+		case TQUERY_QUERY_FAILED:
+		{
+			log_to_file("csgo_remake_errors.log", "[SQL Error] Query failed (%i): %s", Errcode, Error)
+		}
+	}
+
+	new arg1[MAX_NAME_LENGTH], arg2[32], index[3], id
+
+	strtok(szData, index, charsmax(index), szData, iSize, ';')
+
+	id = str_to_num(index)
+
+	strtok(szData, arg1, charsmax(arg1), szData, iSize, '=')
+
+	strtok(szData, arg2, charsmax(arg2), szData, iSize)
+
+	if(iFailState)
+	{
+		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_ERROR_QUERYING")
+		return
+	}
+
+	console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_PASSWORD_CHANGED", arg1, arg2)
+
+	new target = get_user_index(arg1)
+	if(is_user_connected(target))
+	{
+		client_print_color(target, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_CHANGED_PASSWORD", id ? g_szName[id] : "Administrator", arg2)
+	}
+
+	new szQuery[95]
+	formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` SET `Password` = ^"%s%^" WHERE `Name` = ^"%s^";", arg2, arg1)
+
+	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 }
 
 public concmd_getinfo(id, level, cid)
