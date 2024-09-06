@@ -306,6 +306,19 @@ CSGOR_GIVEAWAY_CLOSED = Giveaway-ul este ^4inchis ^1pentru moment.
 CSGOR_LOADING_DATA = Datele tale sunt in curs de ^4incarcare^1.
 CSGOR_DATA_LOADED = Datele tale au fost ^4incarcate cu succes^1.
 
+CSGOR_ADMIN_CHANGE_X_NICK = Adminul ^4%s^1 a schimbat numele lui ^4%s^1 in ^4%s^1.
+CSGOR_CHANGED_NICK = Adminul ^4%s^1 ti-a schimbat numele in ^4%s^1.
+
+CSGOR_T_PASSWORD_SHORT = Parola %s este prea scurta!
+
+CSGOR_ERROR_QUERYING = Eroare in interogarea bazei de date!
+CSGOR_INVALID_ARGUMENT = Argumentul %d este invalid: %s
+
+CSGOR_ACCOUNT_RESET = Contul %s a fost resetat
+CSGOR_ACCOUNT_REMOVED = Contul %s a fost sters
+CSGOR_ACCOUNT_RESET_ITEM = Contului %s i-a fost resetat %s
+CSOGR_ACCOUNT_NOT_FOUND = Contul %s nu a fost gasit!
+
 [en]
 CSGOR_NO_DROP_SKINS = There are no drop type skins!
 CSGOR_NO_CRAFT_SKINS = There are no craft type skins!
@@ -614,3 +627,16 @@ CSGOR_GIVEAWAY_CLOSED = Giveaway is ^4closed ^1for now.
 
 CSGOR_LOADING_DATA = Your account is being ^4loaded^1 please wait.
 CSGOR_DATA_LOADED = Your data has been ^4successfully loaded^1.
+
+CSGOR_ADMIN_CHANGE_X_NICK = Admin ^4%s^1 has changed ^4%s^1's name in ^4%s^1.
+CSGOR_CHANGED_NICK = Admin ^4%s^1 has changed your name in ^4%s^1.
+
+CSGOR_T_PASSWORD_SHORT = The password %s is too short!
+
+CSGOR_ERROR_QUERYING = Error querying the database!
+CSGOR_INVALID_ARGUMENT = Invalid argument number %d: %s
+
+CSGOR_ACCOUNT_RESET = Account %s has been reset
+CSGOR_ACCOUNT_REMOVED = Account %s has been removed
+CSGOR_ACCOUNT_RESET_ITEM = Account's %s got %s reset
+CSOGR_ACCOUNT_NOT_FOUND = Account %s has not been found!
