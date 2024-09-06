@@ -10196,7 +10196,7 @@ public concmd_finddata(id, level, cid)
 	if(!SQL_Execute(iQuery))
 	{
 		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-		log_to_file("csgo_remake_errors.log", "test %s", g_szSqlError)
+		log_to_file("csgo_remake_errors.log", "SQL Error: %s", g_szSqlError)
 		SQL_FreeHandle(iQuery)
 	}
 
@@ -10218,7 +10218,7 @@ public concmd_finddata(id, level, cid)
 		if(!SQL_Execute(iQuery))
 		{
 			SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-			log_to_file("csgo_remake_errors.log", "test2 %s", g_szSqlError)
+			log_to_file("csgo_remake_errors.log", "%s", g_szSqlError)
 		}
 
 		if(SQL_NumResults(iQuery) > 0)
@@ -10257,81 +10257,121 @@ public concmd_resetdata(id, level, cid)
 	log_to_file("csgor_debug_logs.log", "concmd_resetdata()")
 	#endif
 
-	if (!cmd_access(id, level, cid, 3, false) || !is_user_connected(id))
+	if (!cmd_access(id, level, cid, 3, false))
 		return PLUGIN_HANDLED
 	
 	new arg1[32]
 	new arg2[4]
+	new arg3[17]
 	read_argv(1, arg1, charsmax(arg1))
 	read_argv(2, arg2, charsmax(arg2))
-	// TODO: REWORK FOR SQL
-	/*
-	new type = str_to_num(arg2)
 
-	if (g_Vault == INVALID_HANDLE)
+	new type = str_to_num(arg2)
+	new szQuery[200]
+
+	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `csgor_data` WHERE `Name` = ^"%s^"", arg1)
+	if(!SQL_Execute(iQuery))
 	{
-		console_print(id, "%s Reading from vault has failed !", CSGO_TAG)
+		SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+		log_to_file("csgo_remake_errors.log", "SQL Error: %s", g_szSqlError)
+	}
+
+	if(!SQL_NumResults(iQuery))
+	{
+		console_print(id, "%s %L", CSGO_TAG, id, "CSOGR_ACCOUNT_NOT_FOUND", arg1)
 		return PLUGIN_HANDLED
 	}
 
-	new g_szData[MAX_SKINS * 3 + 94]
-	new g_iWeapszBuffer[MAX_SKINS * 2]
-	new Timestamp
-
-	if (nvault_lookup(g_Vault, arg1, g_szData, charsmax(g_szData), Timestamp))
+	switch(type)
 	{
-		new index = get_user_index(arg1)
-		if(index)
+		case 0:
 		{
-			g_bLogged[index] = false
+			formatex(szQuery, charsmax(szQuery), "DELETE FROM `csgor_skins` WHERE `Name` = ^"%s^";", arg1)
 		}
-
-		if (0 < type)
+		case 1:
 		{
-			nvault_remove(g_Vault, arg1)
-			nvault_remove(g_nVault, arg1)
-			nvault_remove(g_sVault, arg1)
-			nvault_remove(g_pVault, arg1)
-			ResetData(id, true)
-			console_print(id, "%s The account has been removed: %s", CSGO_TAG, arg1)
-			return PLUGIN_HANDLED
+			formatex(szQuery, charsmax(szQuery), "SET SQL_SAFE_UPDATES = 0; \
+				DELETE FROM `csgor_data` WHERE `Name` = ^"%s^"; \
+				DELETE FROM `csgor_skins` WHERE `Name` = ^"%s^"; \
+				SET SQL_SAFE_UPDATES = 1;", arg1, arg1)
 		}
-
-		new infoBuffer[MAX_SKIN_NAME]
-		new skinBuffer[MAX_SKINS]
-		new password[16]
-
-		strtok(g_szData, password, charsmax(password), g_szData, charsmax(g_szData), '=', 0)
-
-		formatex(infoBuffer, charsmax(infoBuffer), "%s=,;%d,%d,%d,%d,%d,%d", password, 0, 0, 0, 0, 0, 0)
-		formatex(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%d", 0)
-
-		for (new i = 1; i < MAX_SKINS; i++)
+		case 2:
 		{
-			format(g_iWeapszBuffer, charsmax(g_iWeapszBuffer), "%s,0", g_iWeapszBuffer)
+			read_argv(3, arg3, charsmax(arg3))
+
+			if(strlen(arg3) < 4)
+			{
+				console_print(id, "%L", id, "CSGOR_INVALID_ARGUMENT", 3, arg3)
+				return PLUGIN_HANDLED
+			}
+
+			formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_data` SET `%s`= 0 WHERE `Name` = ^"%s^";", arg3, arg1)
 		}
-
-		formatex(skinBuffer, charsmax(skinBuffer), "%d", 0)
-
-		for (new i = 2; i <= 30; i++)
-		{
-			format(skinBuffer, charsmax(skinBuffer), "%s,0", skinBuffer)
-		}
-
-		formatex(g_szData, charsmax(g_szData), "%s*%s#%s", infoBuffer, g_iWeapszBuffer, skinBuffer)
-		nvault_set(g_Vault, arg1, g_szData)
-
-		console_print(id, "%s The account has been reseted: %s", CSGO_TAG, arg1)
-
-		ResetData(id, true)
-		_Save(index)
 	}
-	else
-	{
-		console_print(id, "%s The account was not found: %s", CSGO_TAG, arg1)
-	}*/
+
+	new index = get_user_index(arg1)
+	if(index)
+		g_bLogged[index] = false
+
+	new szData[MAX_NAME_LENGTH + 5 + 6 + 18]
+	formatex(szData, charsmax(szData), "%s;%s#%s=%d", arg1, arg2, arg3, id)
+
+	SQL_ThreadQuery(g_hSqlTuple, "QueryResetData", szQuery, szData, charsmax(szData))
 
 	return PLUGIN_HANDLED
+}
+
+public QueryResetData(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize, Float:flQueueTime)
+{
+	switch(iFailState)
+	{
+		case TQUERY_CONNECT_FAILED: 
+		{
+			log_to_file("csgo_remake_errors.log", "[SQL Error] Connection failed (%i): %s", Errcode, Error)
+		}
+		case TQUERY_QUERY_FAILED:
+		{
+			log_to_file("csgo_remake_errors.log", "[SQL Error] Query failed (%i): %s", Errcode, Error)
+		}
+	}
+
+	new arg1[MAX_NAME_LENGTH], arg2[4], arg3[17], index[3], id
+
+	strtok(szData, arg1, charsmax(arg1), szData, iSize, ';')
+
+	strtok(szData, arg2, charsmax(arg2), szData, iSize, '#')
+
+	strtok(szData, arg3, charsmax(arg3), szData, iSize, '=')
+
+	strtok(szData, index, charsmax(index), szData, iSize)
+
+	id = str_to_num(index)
+
+	if(iFailState)
+	{
+		console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_ERROR_QUERYING")
+		return
+	}
+
+	switch(arg2[0])
+	{
+		case '0':
+		{
+			console_print(id, "%s %L", CSGO_TAG, id, "CSGOR_ACCOUNT_RESET", arg1)
+		}
+		case '1':
+		{
+			console_print(id, "%s %L", CSGO_TAG, id, "CSGOR_ACCOUNT_REMOVED", arg1)
+		}
+		case '2':
+		{
+			console_print(id, "%s %L", CSGO_TAG, id, "CSGOR_ACCOUNT_RESET_ITEM", arg1, arg3)
+		}
+	}
+
+	new pid = get_user_index(arg1)
+	if(pid)
+		_Load(pid)
 }
 
 public concmd_changepass(id, level, cid)
@@ -10504,13 +10544,14 @@ public concmd_nick(id, level, cid)
 	}
 
 	g_eEnumBooleans[player][IsChangeNotAllowed] = true
-	set_user_info(player, "name", arg2)
 
 	client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_ADMIN_CHANGE_X_NICK", g_szName[id], g_szName[player], arg2)
 
-	set_task(0.5, "task_Reset_Name", id + TASK_RESET_NAME)
-
 	console_print(id, "%s %L", CSGO_TAG, LANG_SERVER, "CSGOR_CHANGED_NICK", g_szName[player], arg2)
+
+	copy(g_szName[player], charsmax(g_szName[]), arg2)
+
+	set_task(0.5, "task_Reset_Name", id + TASK_RESET_NAME)
 
 	return PLUGIN_HANDLED
 }
