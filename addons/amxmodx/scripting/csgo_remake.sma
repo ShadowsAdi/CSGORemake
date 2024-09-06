@@ -22,7 +22,7 @@
 #pragma dynamic MAX_SKINS * 17
 
 #define PLUGIN "CS:GO Remake"
-#define VERSION "2.3.1"
+#define VERSION "2.3.2"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -34,27 +34,6 @@
 #define GetPlayerBit(%0,%1) 			( IsPlayer(%1) && ( %0 & ( 1 << ( %1 & 31 ) ) ) )
 #define SetPlayerBit(%0,%1) 			( IsPlayer(%1) && ( %0 |= ( 1 << ( %1 & 31 ) ) ) )
 #define ClearPlayerBit(%0,%1) 			( %0 &= ~( 1 << ( %1 & 31 ) ) )
-
-#define XO_WEAPON 						4
-#define XO_PLAYER 						5
-#define OFFSET_WEAPONOWNER 				41
-#define OFFSET_ID						43
-#define OFFSET_SECONDARY_ATTACK 		47
-#define OFFSET_WEAPON_IDLE 				48
-#define OFFSET_WEAPONCLIP				51
-#define OFFSET_WEAPON_IN_RELOAD       	54
-#define OFFSET_WEAPONSTATE				74
-#define OFFSET_ACTIVE_ITEM 				373
-
-#define OBS_IN_EYE 						4
-
-#define WPNSTATE_USP_SILENCED 			(1<<0)
-#define WPNSTATE_GLOCK18_BURST_MODE 	(1<<1)
-#define WPNSTATE_M4A1_SILENCED 			(1<<2)
-#define WPNSTATE_ELITE_LEFT 			(1<<3)
-#define WPNSTATE_FAMAS_BURST_MODE 		(1<<4)
-#define UNSIL 							0
-#define SILENCED 						1
 
 #define WEAPONTYPE_ELITE 				1
 #define WEAPONTYPE_GLOCK18				2
@@ -128,13 +107,9 @@
 #define USP_SHOOT_SOUND 				"csgor/usp_unsil.wav"
 #define USP_SILENT_SOUND 				"csgor/usp.wav"
 
-#define weaponsWithoutInspect			((1<<CSW_C4) | (1<<CSW_HEGRENADE) | (1<<CSW_FLASHBANG) | (1<<CSW_SMOKEGRENADE))
+#define weaponsWithoutInspectSkin		((1<<CSW_C4) | (1<<CSW_HEGRENADE) | (1<<CSW_FLASHBANG) | (1<<CSW_SMOKEGRENADE))
 #define weaponsNotVaild					((1<<CSW_C4) | (1<<CSW_HEGRENADE) | (1<<CSW_FLASHBANG) | (1<<CSW_SMOKEGRENADE) | (1<<CSW_KNIFE))
-#define weaponsWithoutSkin				((1<<CSW_C4) | (1<<CSW_HEGRENADE) | (1<<CSW_FLASHBANG) | (1<<CSW_SMOKEGRENADE))
-#define NO_REFILL_WEAPONS 				((1<<CSW_KNIFE)|(1<<CSW_HEGRENADE)|(1<<CSW_FLASHBANG)|(1<<CSW_SMOKEGRENADE)|(1<<CSW_C4))
-#define MISC_ITEMS						((1<<CSI_DEFUSER) | (1<<CSI_NVGS) | (1<<CSI_SHIELD) | (1<<CSI_PRIAMMO) | (1<<CSI_SECAMMO) | (1<<CSI_VEST) | (1<<CSI_VESTHELM))
-
-#define PDATA_SAFE						2
+#define MISC_ITEMS						((1<<CSI_DEFUSER) | (1<<CSI_NVGS) | (1<<CSI_PRIAMMO) | (1<<CSI_SECAMMO) | (1<<CSI_VEST) | (1<<CSI_VESTHELM))
 
 #define EVENT_SVC_INTERMISSION			"30"
 
@@ -203,12 +178,6 @@ enum
 {
 	KEY = 544,
 	CASE = 545
-}
-
-enum
-{
-	NVAULT = 0,
-	MYSQL = 1
 }
 
 enum
@@ -536,39 +505,6 @@ new GrenadeName[][] =
 	"weapon_smokegrenade"
 }
 
-new const g_szWeaponEntName[][] =
-{
-	"weapon_p228",
-	"weapon_scout",
-	"weapon_hegrenade",
-	"weapon_xm1014",
-	"weapon_c4",
-	"weapon_mac10",
-	"weapon_aug",
-	"weapon_smokegrenade",
-	"weapon_elite",
-	"weapon_fiveseven",
-	"weapon_ump45",
-	"weapon_sg550",
-	"weapon_galil",
-	"weapon_famas",
-	"weapon_usp",
-	"weapon_glock18",
-	"weapon_awp",
-	"weapon_mp5navy",
-	"weapon_m249",
-	"weapon_m3",
-	"weapon_m4a1",
-	"weapon_tmp",
-	"weapon_g3sg1",
-	"weapon_flashbang",
-	"weapon_deagle",
-	"weapon_sg552",
-	"weapon_ak47",
-	"weapon_knife",
-	"weapon_p90"
-}
-
 new const g_iMaxBpAmmo[] =
 {
 	0,
@@ -889,12 +825,8 @@ public plugin_init()
 		RegisterHam(Ham_Weapon_SecondaryAttack, GrenadeName[i], "Ham_GrenadeSecondaryAttack_Pre")
 	}
 
-	for(new i = 0; i < sizeof(g_szWeaponEntName); i++)
-	{
-		RegisterHam(Ham_Item_Deploy, g_szWeaponEntName[i], "Ham_Item_Deploy_Post", 1)
-		RegisterHam(Ham_CS_Item_CanDrop, g_szWeaponEntName[i], "Ham_Item_Can_Drop_Pre")
-		RegisterHam(Ham_CS_Weapon_SendWeaponAnim, g_szWeaponEntName[i], "HamF_CS_Weapon_SendWeaponAnim_Post", 1)
-	}
+	RegisterHookChain(RG_CBasePlayerWeapon_DefaultDeploy, "RG_CBasePlayerWeapon_DefaultDeploy_Post", 1)
+	RegisterHookChain(RG_CBasePlayer_DropPlayerItem, "RG_CBasePlayer_DropPlayerItem_Pre")
 
 	for (new i; i < sizeof(TraceBullets); i++)
 	{
@@ -2082,12 +2014,12 @@ public Ham_Take_Damage_Post( iVictim, inf, iAttacker, Float:iDamage )
 	log_to_file("csgor_debug_logs.log", "Ham_Take_Damage_Post()")
 	#endif
 
-	if( !is_user_alive(iVictim) || !GetPlayerBit(g_bitIsAlive, iAttacker) || pev_valid(iAttacker) != PDATA_SAFE)
+	if( !is_user_alive(iVictim) || !GetPlayerBit(g_bitIsAlive, iAttacker) || !is_user_alive(iAttacker) )
 		return HAM_IGNORED
 
-	new weapon = get_pdata_cbase(iAttacker, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+	new weapon = GetPlayerActiveItem(iAttacker)
 	
-	if(pev_valid(iAttacker) != PDATA_SAFE || pev_valid(weapon) != PDATA_SAFE)
+	if(is_nullent(iAttacker) || is_nullent(weapon))
 		return HAM_IGNORED
 	
 	if ( g_iCvars[iSilentWeapDamage] )
@@ -2134,7 +2066,7 @@ public Ham_Player_Spawn_Post(id)
 	{
 		weaponid = weapons[i]
 
-		if ((1<<weaponid) & NO_REFILL_WEAPONS)
+		if ((1<<weaponid) & weaponsNotVaild)
 			return HAM_IGNORED
 
 		ExecuteHamB(Ham_GiveAmmo, id, g_iMaxBpAmmo[weaponid], g_szAmmoType[weaponid], g_iMaxBpAmmo[weaponid])
@@ -2212,29 +2144,26 @@ public Ham_Player_Killed_Pre(id)
 
 	if(!is_user_connected(id))
 	{
-		return HAM_IGNORED
+		return
 	}
 
-	new iActiveItem = get_pdata_cbase(id, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+	new iActiveItem = GetPlayerActiveItem(id)
 
-	if (pev_valid(iActiveItem) != PDATA_SAFE)
-	{
-
-		return HAM_IGNORED
-	}
+	if (is_nullent(iActiveItem))
+		return
 
 	new imp = pev(iActiveItem, pev_impulse)
 
 	if (0 < imp)
 	{
-		return HAM_IGNORED; 
+		return; 
 	}
 
-	new iId = get_pdata_int(iActiveItem, OFFSET_ID, XO_WEAPON)
+	new iId = GetWeaponEntity(iActiveItem)
 
 	if ((1 << iId) & weaponsNotVaild)
 	{
-		return HAM_IGNORED
+		return
 	}
 
 	new skin = g_iStattrackWeap[id][bStattrack][iId] ? g_iStattrackWeap[id][iSelected][iId] : g_iUserSelectedSkin[id][iId]
@@ -2243,7 +2172,6 @@ public Ham_Player_Killed_Pre(id)
 	{
 		set_pev(iActiveItem, pev_impulse, skin + 1)
 	}
-	return HAM_IGNORED
 }
 
 public Ham_Player_Killed_Post(id)
@@ -2327,7 +2255,7 @@ public CS_OnBuy(id, item)
 	if(item == CSI_SHIELD)
 		return PLUGIN_HANDLED
 
-	if ((1<<item) & NO_REFILL_WEAPONS || (1<<item) & MISC_ITEMS)
+	if ((1<<item) & weaponsNotVaild || (1<<item) & MISC_ITEMS)
 		return PLUGIN_CONTINUE
 
 	ExecuteHamB(Ham_GiveAmmo, id, g_iMaxBpAmmo[item], g_szAmmoType[item], g_iMaxBpAmmo[item])
@@ -2446,9 +2374,9 @@ public task_HUD(id)
 				new szSkin[MAX_SKIN_NAME], szTemp[128]
 				new bool:bError = false
 
-				new iActiveItem = get_pdata_cbase(id, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+				new iActiveItem = GetPlayerActiveItem(id)
 
-				if(pev_valid(iActiveItem) != PDATA_SAFE)
+				if(is_nullent(iActiveItem))
 				{
 					bError = true
 				}
@@ -2457,9 +2385,9 @@ public task_HUD(id)
 				
 				if(!bError)
 				{
-					weapon = get_pdata_int(iActiveItem, OFFSET_ID, XO_WEAPON)
+					weapon = GetWeaponEntity(iActiveItem)
 
-					if((1 << weapon) & weaponsWithoutSkin)
+					if((1 << weapon) & weaponsWithoutInspectSkin)
 					{
 						bError = true
 					}
@@ -2866,7 +2794,7 @@ public _SaveData(id)
 
 	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
-	formatex(szDummy, charsmax(szDummy), "%d-SB", id)
+	formatex(szDummy, charsmax(szDummy), "%d-EB", id)
 	TrieGetString(g_tDataTrie, szDummy, szBuffer, charsmax(szBuffer))
 
 	formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
@@ -2875,7 +2803,7 @@ public _SaveData(id)
 
 	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
-	formatex(szDummy, charsmax(szDummy), "%d-EB", id)
+	formatex(szDummy, charsmax(szDummy), "%d-SB", id)
 	TrieGetString(g_tDataTrie, szDummy, szBuffer, charsmax(szBuffer))
 
 	formatex(szQuery, charsmax(szQuery), "UPDATE `csgor_skins` \
@@ -2884,12 +2812,12 @@ public _SaveData(id)
 
 	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 
-	task_update_stattrack(id, .iType = MYSQL)
+	task_update_stattrack(id)
 
 	return PLUGIN_HANDLED
 }
 
-public task_update_stattrack(id, iType)
+public task_update_stattrack(id)
 {
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "task_update_stattrack()")
@@ -2913,7 +2841,7 @@ public task_update_stattrack(id, iType)
 	WHERE `Name`=^"%s^";", szTemp, g_szName[id])
 	SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szTemp)
 
-	task_update_stattrack_kills(id, .iType = MYSQL)
+	task_update_stattrack_kills(id)
 }
 
 public QueryHandler(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize, Float:flQueueTime)
@@ -2931,7 +2859,7 @@ public QueryHandler(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize
 	}
 }
 
-public task_update_stattrack_kills(id, iType)
+public task_update_stattrack_kills(id)
 {
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "task_update_stattrack_kills()")
@@ -3818,7 +3746,7 @@ public skin_menu_handler(id, menu, item)
 					{
 						client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_PREVIEW_ALREADY")
 
-						goto _return
+						return _MenuExit(menu)
 					}
 
 					new iWeaponID = ArrayGetCell(g_aSkinWeaponID, item)
@@ -3829,7 +3757,7 @@ public skin_menu_handler(id, menu, item)
 
 						_ShowPreviewMenu(id)
 
-						goto _return
+						return _MenuExit(menu)
 					}
 
 					new szParams[50]
@@ -3912,29 +3840,23 @@ public skin_menu_handler(id, menu, item)
 					_ShowSkinsMenu(id)
 				}
 			}
-			if(pev_valid(id) != PDATA_SAFE)
-			{
-				return PLUGIN_HANDLED
-			}
 
 			new iActiveItem, weapon
 
-			iActiveItem = get_pdata_cbase(id, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+			iActiveItem = GetPlayerActiveItem(id)
 
-			if(pev_valid(iActiveItem) != PDATA_SAFE) goto _return
+			if(is_nullent(iActiveItem)) 
+				return _MenuExit(menu)
 
 			weapon = GetWeaponEntity(iActiveItem)
 
-			if(!pev_valid(weapon))
-			{
+			if(!IsValidWeapon(weapon))
 				return _MenuExit(menu)
-			}
 
 			change_skin(id, weapon)
 		}
 	}
 
-	_return:
 	return _MenuExit(menu)
 }
 
@@ -4211,16 +4133,12 @@ public Ham_GrenadePrimaryAttack_Pre(ent)
 	log_to_file("csgor_debug_logs.log", "Ham_GrenadePrimaryAttack_Pre()")
 	#endif
 
-	if (pev_valid(ent) != PDATA_SAFE)
-	{
-		return HAM_IGNORED
-	}
+	if (is_nullent(ent))
+		return
 
-	new id = get_pdata_cbase(ent, OFFSET_WEAPONOWNER, XO_WEAPON)
+	new id = GetEntityOwner(ent)
 
 	ClearPlayerBit(g_bitShortThrow, id)
-
-	return HAM_IGNORED
 }
 
 public Ham_GrenadeSecondaryAttack_Pre(ent)
@@ -4229,17 +4147,14 @@ public Ham_GrenadeSecondaryAttack_Pre(ent)
 	log_to_file("csgor_debug_logs.log", "Ham_GrenadeSecondaryAttack_Pre()")
 	#endif
 
-	if (pev_valid(ent) != PDATA_SAFE)
-	{
-		return HAM_IGNORED
-	}
-	new id = get_pdata_cbase(ent, OFFSET_WEAPONOWNER, XO_WEAPON)
+	if (is_nullent(ent))
+		return
+
+	new id = GetEntityOwner(ent)
 
 	ExecuteHamB(Ham_Weapon_PrimaryAttack, ent)
 
 	SetPlayerBit(g_bitShortThrow, id)
-
-	return HAM_IGNORED
 }
 
 public grenade_throw(id, ent, csw)
@@ -4248,7 +4163,7 @@ public grenade_throw(id, ent, csw)
 	log_to_file("csgor_debug_logs.log", "grenade_throw()")
 	#endif
 
-	if(!pev_valid(ent))
+	if(is_nullent(ent))
 		return
 	
 	switch (csw)
@@ -4286,51 +4201,22 @@ public grenade_throw(id, ent, csw)
 	ClearPlayerBit(g_bitShortThrow, id)
 }
 
-public Ham_Item_Deploy_Post(ent)
+public RG_CBasePlayerWeapon_DefaultDeploy_Post(ent)
 {
 	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "Ham_Item_Deploy_Post()")
+	log_to_file("csgor_debug_logs.log", "RG_CBasePlayerWeapon_DefaultDeploy_Post()")
 	#endif
 
-	if(pev_valid(ent) != PDATA_SAFE)
+	if(is_nullent(ent))
 		return
 	
-	new iPlayer = get_pdata_cbase(ent, OFFSET_WEAPONOWNER, XO_WEAPON)
+	new iPlayer = GetEntityOwner(ent)
 	
 	new weapon = GetWeaponEntity(ent)
 	
 	g_iWeaponIndex[iPlayer] = weapon
-
-	if (weapon != CSW_HEGRENADE && weapon != CSW_SMOKEGRENADE && weapon != CSW_FLASHBANG && weapon != CSW_C4) 
-	{
-		set_pev(iPlayer, pev_viewmodel2, "")
-	}
 	
 	change_skin(iPlayer, weapon)
-}
-
-public HamF_CS_Weapon_SendWeaponAnim_Post(iEnt, iAnim, Skiplocal)
-{
-	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "HamF_CS_Weapon_SendWeaponAnim_Post()")
-	#endif
-
-	Skiplocal = false
-
-	if(pev_valid(iEnt) != PDATA_SAFE)
-		return HAM_IGNORED
-
-	new iPlayer, weapon
-	iPlayer = get_pdata_cbase(iEnt, OFFSET_WEAPONOWNER, XO_WEAPON)
-	
-	weapon = GetWeaponEntity(iEnt)
-
-	if(!pev_valid(weapon))
-		return FMRES_IGNORED
-
-	SendWeaponAnim(iPlayer, iAnim)
-	
-	return HAM_IGNORED
 }
 
 public HamF_TraceAttack_Post(iEnt, iAttacker, Float:damage, Float:fDir[3], ptr, iDamageType)
@@ -4339,20 +4225,18 @@ public HamF_TraceAttack_Post(iEnt, iAttacker, Float:damage, Float:fDir[3], ptr, 
 	log_to_file("csgor_debug_logs.log", "HamF_TraceAttack_Post()")
 	#endif
 
-	if(pev_valid(iAttacker) != PDATA_SAFE)
-	{
-		return HAM_IGNORED
-	}
+	if(is_nullent(iAttacker))
+		return
 
 	new iWeapon
 	static Float:vecEnd[3]
 
-	iWeapon = get_pdata_cbase(iAttacker, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+	iWeapon = GetPlayerActiveItem(iAttacker)
 	
 	new iWeaponEnt = GetWeaponEntity(iWeapon)
 
-	if(!pev_valid(iWeaponEnt) || !iWeaponEnt || iWeaponEnt == CSW_KNIFE)
-		return HAM_IGNORED
+	if(!IsValidWeapon(iWeaponEnt) || !iWeaponEnt || iWeaponEnt == CSW_KNIFE)
+		return
 
 	get_tr2(ptr, TR_vecEndPos, vecEnd)
 
@@ -4364,8 +4248,6 @@ public HamF_TraceAttack_Post(iEnt, iAttacker, Float:damage, Float:fDir[3], ptr, 
 	write_short(iEnt)
 	write_byte(random_num(41, 45))
 	message_end()
-
-	return HAM_IGNORED
 }
 
 public Ham_Weapon_Secondary_Pre(ent)
@@ -4374,16 +4256,17 @@ public Ham_Weapon_Secondary_Pre(ent)
 	log_to_file("csgor_debug_logs.log", "Ham_Weapon_Secondary_Pre()")
 	#endif
 
-	if (pev_valid(ent) != PDATA_SAFE) return HAM_IGNORED
+	if (is_nullent(ent)) 
+		return HAM_IGNORED
 
 	new skin, id
 
-	id = get_pdata_cbase(ent, OFFSET_WEAPONOWNER, XO_WEAPON)
+	id = GetEntityOwner(ent)
 
-	if (pev_valid(id) != PDATA_SAFE || !is_user_alive(id))
+	if (is_nullent(id) || !is_user_alive(id))
 		return HAM_IGNORED
 	
-	new weapon = get_pdata_cbase(id, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+	new weapon = GetPlayerActiveItem(id)
 
 	new weaponid = cs_get_weapon_id(weapon)
 
@@ -4397,10 +4280,16 @@ public Ham_Weapon_Secondary_Pre(ent)
 
 		if (containi(skinName, "M4A4") != -1) 
 		{
-			cs_set_weapon_silen(ent, 0, 0)
+			return HAM_SUPERCEDE
+		}
+	}
+	else
+	{
+		new szTemp[64]
+		pev(id, pev_viewmodel2, szTemp, charsmax(szTemp))
 
-			set_pdata_float(ent, OFFSET_SECONDARY_ATTACK, 9999.0, XO_WEAPON)
-
+		if (containi(szTemp, "m4a4") != -1) 
+		{
 			return HAM_SUPERCEDE
 		}
 	}
@@ -4431,28 +4320,18 @@ public FM_Hook_PlayBackEvent_Pre(iFlags, pPlayer, iEvent, Float:fDelay, Float:ve
 	return FMRES_IGNORED
 }
 
-public pfn_playbackevent(flags, entid, eventid, Float:delay, Float:Origin[3], Float:Angles[3], Float:fparam1, Float:fparam2, iparam1, iparam2, bparam1, bparam2)
-{ 
-	if(g_bGEventID[eventid])
-	{
-		return PLUGIN_HANDLED
-	}
-
-	return PLUGIN_CONTINUE
-}
-
 public FM_Hook_PlayBackEvent_Primary_Pre(iFlags, id, eventid, Float:delay, Float:FlOrigin[3], Float:FlAngles[3], Float:FlParam1, Float:FlParam2, iParam1, iParam2, bParam1, bParam2)
 {
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "FM_Hook_PlayBackEvent_Primary_Pre()")
 	#endif
-
-	if(!is_user_connected(id) || pev_valid(id) != PDATA_SAFE || !IsPlayer(id))
-		return
+	if(!is_user_connected(id) || is_nullent(id) || !IsPlayer(id) || !g_bGEventID[eventid])
+		return FMRES_IGNORED
 
 	new iEnt = get_user_weapon(id)
 
 	PrimaryAttackReplace(id, iEnt)
+	return FMRES_SUPERCEDE
 }
 
 DeployWeaponSwitch(iPlayer)
@@ -4463,14 +4342,13 @@ DeployWeaponSwitch(iPlayer)
 
 	new weaponid, userskin; 
 
-	new weapon = get_pdata_cbase(iPlayer, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+	new weapon = GetPlayerActiveItem(iPlayer)
 
-	if (!weapon || !pev_valid(weapon))
+	if (is_nullent(weapon))
 		return
 
-	weaponid = cs_get_weapon_id(weapon)
+	weaponid = GetWeaponEntity(weapon)
 	userskin = (g_iStattrackWeap[iPlayer][bStattrack][weaponid] ? g_iStattrackWeap[iPlayer][iSelected][weaponid] : g_iUserSelectedSkin[iPlayer][weaponid])
-
 	new model[48]
 
 	new imp = pev(weapon, pev_impulse)
@@ -4479,7 +4357,7 @@ DeployWeaponSwitch(iPlayer)
 	{
 		ArrayGetString(g_aSkinModel, imp - 1, model, charsmax(model))
 
-		set_pev(iPlayer, pev_viewmodel2, model)
+		SetWeaponModel(iPlayer, true, model)
 
 		g_iUserViewBody[iPlayer][weaponid] = ArrayGetCell(g_aSkinSubModel, imp - 1)
 
@@ -4487,7 +4365,7 @@ DeployWeaponSwitch(iPlayer)
 		{
 			ArrayGetString(g_aSkinModelP, imp - 1, model, charsmax(model))
 
-			set_pev(iPlayer, pev_weaponmodel2, model)
+			SetWeaponModel(iPlayer, false, model)
 		}
 	}
 	else
@@ -4518,23 +4396,31 @@ DeployWeaponSwitch(iPlayer)
 			{
 				ArrayGetString(g_aSkinModel, userskin, model, charsmax(model))
 
-				set_pev(iPlayer, pev_viewmodel2, model)
+				SetWeaponModel(iPlayer, true, model)
 
 				g_iUserViewBody[iPlayer][weaponid] = ArrayGetCell(g_aSkinSubModel, userskin)
 
 				if (g_bSkinHasModelP[userskin])
 				{
 					ArrayGetString(g_aSkinModelP, userskin, model, charsmax(model))
-					set_pev(iPlayer, pev_weaponmodel2, model)
+					SetWeaponModel(iPlayer, false, model)
 				}
 			}
+		}
+
+		if (containi(model, "m4a4") != -1) 
+		{
+			new iEnt = GetPlayerActiveItem(iPlayer)
+
+			if(!is_nullent(iEnt))
+				cs_set_weapon_silen(iEnt, 0, 0)
 		}
 
 		if(!g_bLogged[iPlayer] || userskin == -1)
 		{
 			if(defaultModels[g_iWeaponIndex[iPlayer]][0] != '-')
 			{
-				set_pev(iPlayer, pev_viewmodel2, defaultModels[g_iWeaponIndex[iPlayer]])
+				SetWeaponModel(iPlayer, true, defaultModels[g_iWeaponIndex[iPlayer]])
 				g_iUserViewBody[iPlayer][weaponid] = ArrayGetCell(g_aDefaultSubmodel, g_iWeaponIndex[iPlayer])
 			}
 		}
@@ -4543,42 +4429,29 @@ DeployWeaponSwitch(iPlayer)
 	SendWeaponAnim(iPlayer, WeaponDrawAnim(weapon))
 }
 
-public Ham_Item_Can_Drop_Pre(ent)
+public RG_CBasePlayer_DropPlayerItem_Pre(id)
 {
 	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "Ham_Item_Can_Drop_Pre()")
+	log_to_file("csgor_debug_logs.log", "RG_CBasePlayerWeapon_CanDeploy_Pre()")
 	#endif
 
-	if (pev_valid(ent) != PDATA_SAFE)
-	{
-		return HAM_IGNORED
-	}
+	if (!is_user_connected(id))
+		return
+
+	new ent = GetPlayerActiveItem(id)
+
+	if(is_nullent(ent))
+		return
 	
-	new weapon = get_pdata_int(ent, OFFSET_ID, XO_WEAPON)
+	new weapon = GetWeaponEntity(ent)
 
-	if (weapon < 1 || weapon > 30)
-	{
-		return HAM_IGNORED
-	}
-
-	if ((1 << weapon) & weaponsNotVaild)
-	{
-		return HAM_IGNORED
-	}
+	if (!IsValidWeapon(weapon) || (1 << weapon) & weaponsNotVaild)
+		return
 
 	new imp = pev(ent, pev_impulse)
 
 	if (0 < imp)
-	{
-		return HAM_IGNORED
-	}
-
-	new id = get_pdata_cbase(ent, OFFSET_WEAPONOWNER, XO_WEAPON)
-
-	if (!is_user_connected(id))
-	{
-		return HAM_IGNORED
-	}
+		return
 
 	new skin = (g_iStattrackWeap[id][bStattrack][weapon] ? g_iStattrackWeap[id][iSelected][weapon] : g_iUserSelectedSkin[id][weapon])
 
@@ -4586,8 +4459,6 @@ public Ham_Item_Can_Drop_Pre(ent)
 	{
 		set_pev(ent, pev_impulse, skin + 1)
 	}
-
-	return HAM_IGNORED
 }
 
 public _ShowOpenCaseCraftMenu(id)
@@ -5049,7 +4920,7 @@ public _ShowMarketMenu(id)
 	new n
 	new p
 
-	get_players(Pl, n, "ch", "")
+	get_players(Pl, n, "ch")
 
 	if (n)
 	{
@@ -10616,16 +10487,16 @@ public clcmd_say_skin(id)
 		return PLUGIN_HANDLED
 	}
 
-	new iActiveItem = get_pdata_cbase(player, OFFSET_ACTIVE_ITEM, XO_PLAYER)
+	new iActiveItem = GetPlayerActiveItem(player)
 
-	if(pev_valid(iActiveItem) != PDATA_SAFE)
+	if(is_nullent(iActiveItem))
 	{
 		return PLUGIN_HANDLED
 	}
 
-	new weapon = get_pdata_int(iActiveItem, OFFSET_ID, XO_WEAPON)
+	new weapon = GetWeaponEntity(iActiveItem)
 
-	if((1 << weapon) & weaponsWithoutSkin)
+	if((1 << weapon) & weaponsWithoutInspectSkin)
 	{
 		return PLUGIN_HANDLED
 	}
@@ -10833,13 +10704,13 @@ public inspect_weapon(id)
 	log_to_file("csgor_debug_logs.log", "inspect_weapon()")
 	#endif
 
-	if (pev_valid(id) != PDATA_SAFE || !is_user_alive(id) || cs_get_user_shield(id) || cs_get_user_zoom(id) > 1) return PLUGIN_HANDLED
+	if (is_nullent(id) || !is_user_alive(id) || cs_get_user_shield(id) || cs_get_user_zoom(id) > 1) return PLUGIN_HANDLED
 
-	new weaponId = get_user_weapon(id)
-	new weapon; 
-	weapon = get_pdata_cbase(id, OFFSET_ACTIVE_ITEM, XO_PLAYER)
 	
-	if(weaponsWithoutInspect & (1<<weaponId) || pev_valid(weapon) != PDATA_SAFE || get_pdata_int(weapon, OFFSET_WEAPON_IN_RELOAD, XO_WEAPON))
+	new weapon = GetPlayerActiveItem(id)
+	new weaponId = GetWeaponEntity(weapon)
+	
+	if(weaponsWithoutInspectSkin & (1<<weaponId) || is_nullent(weapon) || get_member(weapon, m_Weapon_fInReload))
 		return PLUGIN_HANDLED
 
 	new animation = inspectAnimation[weaponId]
@@ -10860,7 +10731,7 @@ public inspect_weapon(id)
 
 	g_eEnumBooleans[id][IsInInspect] = true
 
-	set_pdata_float(weapon, OFFSET_WEAPON_IDLE, 6.5, XO_WEAPON)
+	set_member(id, m_flTimeWeaponIdle, 6.5)
 	SendWeaponAnim(id, animation)
 
 	return PLUGIN_HANDLED
@@ -10872,13 +10743,13 @@ public WeaponShootInfo2(iPlayer, iEnt, iAnim, const szSoundEmpty[], const szSoun
 	log_to_file("csgor_debug_logs.log", "WeaponShootInfo2()")
 	#endif
 
-	if(!is_user_connected(iPlayer) || pev_valid(iPlayer) != PDATA_SAFE || !IsPlayer(iPlayer))
-		return FMRES_IGNORED
+	if(!is_user_connected(iPlayer) || is_nullent(iPlayer) || !IsPlayer(iPlayer))
+		return
 
-	static iWeaponID, iClip
-	iWeaponID = get_pdata_cbase(iPlayer, 373, XO_PLAYER)
+	new iWeaponID, iClip
+	iWeaponID = GetPlayerActiveItem(iPlayer)
 
-	iClip = get_pdata_int(iWeaponID, OFFSET_WEAPONCLIP, XO_WEAPON)
+	iClip = get_member(iWeaponID, m_Weapon_iClip)
 
 	if(!iClip)
 	{
@@ -10889,45 +10760,45 @@ public WeaponShootInfo2(iPlayer, iEnt, iAnim, const szSoundEmpty[], const szSoun
 			PlayWeaponState(iPlayer, szSoundFire, iAnim)
 		}
 
-		return FMRES_SUPERCEDE
+		return
 	}
 
-	if(!pev_valid(iWeaponType))
-		return FMRES_SUPERCEDE
+	new WeaponState:iWeaponState = get_member(iWeaponID, m_Weapon_iWeaponState)
+
+	if(!iWeaponState)
+	{
+		PlayWeaponState(iPlayer, szSoundFire, iAnim)
+		return
+	}
 
 	switch(iWeaponType)
 	{
 		case WEAPONTYPE_ELITE:
 		{
-			if(get_pdata_int(iWeaponID, OFFSET_WEAPONSTATE, XO_WEAPON) & WPNSTATE_ELITE_LEFT)
+			if(iWeaponState & WPNSTATE_ELITE_LEFT)
 				PlayWeaponState(iPlayer, ELITE_SHOOT_SOUND, ELITE_SHOOTLEFT5)
 		}
 		case WEAPONTYPE_GLOCK18:
 		{
-			if(get_pdata_int(iWeaponID, OFFSET_WEAPONSTATE, XO_WEAPON) & WPNSTATE_GLOCK18_BURST_MODE)
+			if(iWeaponState & WPNSTATE_GLOCK18_BURST_MODE)
 				PlayWeaponState(iPlayer, GLOCK18_BURST_SOUND, GLOCK18_SHOOT2)
 		}
 		case WEAPONTYPE_FAMAS:
 		{
-			if(get_pdata_int(iWeaponID, OFFSET_WEAPONSTATE, XO_WEAPON) & WPNSTATE_FAMAS_BURST_MODE)
+			if(iWeaponState & WPNSTATE_FAMAS_BURST_MODE)
 				PlayWeaponState(iPlayer, CLARION_BURST_SOUND, CLARION_SHOOT2)
 		}
 		case WEAPONTYPE_M4A1:
 		{
-			if(get_pdata_int(iWeaponID, OFFSET_WEAPONSTATE, XO_WEAPON) & WPNSTATE_M4A1_SILENCED)
+			if(iWeaponState & WPNSTATE_M4A1_SILENCED)
 				PlayWeaponState(iPlayer, M4A1_SILENT_SOUND, M4A1_SHOOT3)
 		}
 		case WEAPONTYPE_USP: 
 		{
-			if(get_pdata_int(iWeaponID, OFFSET_WEAPONSTATE, XO_WEAPON) & WPNSTATE_USP_SILENCED)
+			if(iWeaponState & WPNSTATE_USP_SILENCED)
 				PlayWeaponState(iPlayer, USP_SILENT_SOUND, USP_SHOOT3)
 		}
 	}
-
-	if(!(get_pdata_int(iWeaponID, OFFSET_WEAPONSTATE, XO_WEAPON)))
-		PlayWeaponState(iPlayer, szSoundFire, iAnim)
-
-	return FMRES_SUPERCEDE
 }
 
 bool:IsHalf()
@@ -11944,11 +11815,14 @@ GetMaxSkins(iWeapon)
 
 SendWeaponAnim(iPlayer, iAnim = 0)
 {
-	#if defined DEBUG
-	log_to_file("csgor_debug_logs.log", "SendWeaponAnim()")
-	#endif
+	if(!is_user_connected(iPlayer) || !IsPlayer(iPlayer))
+		return
 
-	if(!is_user_connected(iPlayer) || pev_valid(iPlayer) != PDATA_SAFE || !IsPlayer(iPlayer))
+	static iCount, iSpectator, iszSpectators[MAX_PLAYERS]
+
+	new iWeapon = GetPlayerActiveItem(iPlayer)
+
+	if(is_nullent(iWeapon))
 		return
 
 	g_iUserBodyGroup[iPlayer] = g_iUserViewBody[iPlayer][cs_get_user_weapon(iPlayer)]
@@ -11956,14 +11830,11 @@ SendWeaponAnim(iPlayer, iAnim = 0)
 	static iBody
 	iBody = g_iUserBodyGroup[iPlayer]
 
-	static iCount, iSpectator, iszSpectators[MAX_PLAYERS]
-
+	set_entvar(iWeapon, var_body, iBody)
 	set_pev(iPlayer, pev_weaponanim, iAnim)
 
-	message_begin(MSG_ONE_UNRELIABLE, SVC_WEAPONANIM, _, iPlayer)
-	write_byte(iAnim)
-	write_byte(iBody)
-	message_end()
+	if(is_user_alive(iPlayer))
+		rg_weapon_send_animation(iPlayer, iAnim)
 
 	if(pev(iPlayer, pev_iuser1))
 		return
@@ -11979,6 +11850,7 @@ SendWeaponAnim(iPlayer, iAnim = 0)
 
 		set_pev(iSpectator, pev_weaponanim, iAnim)
 
+		// Cannot send rg_weapon_send_animation to dead players.
 		message_begin(MSG_ONE_UNRELIABLE, SVC_WEAPONANIM, _, iSpectator)
 		write_byte(iAnim)
 		write_byte(iBody)
@@ -11992,15 +11864,12 @@ WeaponDrawAnim(iEntity)
 	log_to_file("csgor_debug_logs.log", "WeaponDrawAnim()")
 	#endif
 
-	static DrawAnim, iWeaponState
+	if(is_nullent(iEntity))
+		return -1
 
-	if(get_pdata_int(iEntity, OFFSET_WEAPONSTATE, XO_WEAPON) & WPNSTATE_USP_SILENCED || get_pdata_int(iEntity, OFFSET_WEAPONSTATE, XO_WEAPON) & WPNSTATE_M4A1_SILENCED)
-		iWeaponState = SILENCED
-	else
-		iWeaponState = UNSIL
+	static DrawAnim, WeaponState:mWeaponState
 
-	if(!pev_valid(GetWeaponEntity(iEntity)))
-		return PLUGIN_HANDLED
+	mWeaponState = get_member(iEntity, m_Weapon_iWeaponState)
 
 	switch(GetWeaponEntity(iEntity))
 	{
@@ -12014,19 +11883,11 @@ WeaponDrawAnim(iEntity)
 		case CSW_C4: DrawAnim = 1
 		case CSW_USP:
 		{
-			switch(iWeaponState)
-			{
-				case SILENCED: DrawAnim = 6
-				case UNSIL: DrawAnim = 14
-			}
+			DrawAnim = (mWeaponState & WPNSTATE_USP_SILENCED) ? 6 : 14
 		}
 		case CSW_M4A1:
 		{
-			switch(iWeaponState)
-			{
-				case SILENCED: DrawAnim = 5
-				case UNSIL: DrawAnim = 12
-			}
+			DrawAnim = (mWeaponState & WPNSTATE_M4A1_SILENCED) ? 5 : 12
 		}
 	}
 
@@ -12064,8 +11925,34 @@ PrimaryAttackReplace(id, iEnt)
 		case CSW_SG552: WeaponShootInfo2(id, iEnt, SG552_SHOOT2, DRYFIRE_RIFLE, SG552_SHOOT_SOUND, 1, WEAPONTYPE_OTHER)
 		case CSW_TMP: WeaponShootInfo2(id, iEnt, TMP_SHOOT3, DRYFIRE_RIFLE, TMP_SHOOT_SOUND, 1, WEAPONTYPE_OTHER)
 		case CSW_UMP45: WeaponShootInfo2(id, iEnt, UMP45_SHOOT2, DRYFIRE_RIFLE, UMP45_SHOOT_SOUND, 1, WEAPONTYPE_OTHER)
-		case CSW_USP: WeaponShootInfo2(id, iEnt, USP_UNSIL_SHOOT3, DRYFIRE_PISTOL, USP_SHOOT_SOUND, 0, WEAPONTYPE_USP)
+		case CSW_USP: WeaponShootInfo2(id, iEnt, USP_UNSIL_SHOOT3, DRYFIRE_PISTOL, USP_SHOOT_SOUND, 1, WEAPONTYPE_USP)
 	}
+}
+
+GetPlayerActiveItem(id)
+{
+	#if defined DEBUG
+	log_to_file("csgor_debug_logs.log", "GetPlayerActiveItem()")
+	#endif
+
+	return get_member(id, m_pActiveItem)
+}
+
+GetEntityOwner(iEnt)
+{
+	#if defined DEBUG
+	log_to_file("csgor_debug_logs.log", "GetEntityOwner()")
+	#endif
+
+	return get_member(iEnt, m_pPlayer)
+}
+
+bool:IsValidWeapon(iWeapon)
+{
+	if(iWeapon < 1 || iWeapon > 30)
+		return false
+
+	return true
 }
 
 GetWeaponEntity(iEnt)
@@ -12074,7 +11961,7 @@ GetWeaponEntity(iEnt)
 	log_to_file("csgor_debug_logs.log", "GetWeaponEntity()")
 	#endif
 
-	return get_pdata_int(iEnt, OFFSET_ID, XO_WEAPON)
+	return get_member(iEnt, m_iId)
 }
 
 PlayWeaponState(iPlayer, const szShootSound[], iWeaponAnim)
@@ -12162,13 +12049,18 @@ DoIntermission()
 	emessage_end()
 }
 
+SetWeaponModel(id, bool:bViewModel, model[])
+{
+	set_pev(id, bViewModel ? pev_viewmodel2 : pev_weaponmodel2, model)
+}
+
 GetSkinInfo(player, weapon, iActiveItem)
 {
 	new skin = -1
 
 	switch (weapon)
 	{
-		case 29:
+		case CSW_KNIFE:
 		{
 			if(g_iStattrackWeap[player][bStattrack][weapon])
 			{
@@ -12184,7 +12076,6 @@ GetSkinInfo(player, weapon, iActiveItem)
 					skin = g_iUserSelectedSkin[player][weapon]
 				}
 			}
-			
 		}
 		default:
 		{
