@@ -23,7 +23,7 @@ All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This
 ## Features
 MySQL data saving.
 
-Maxmimum skin amount is 450.
+Maxmimum skin amount is 450 ( You can increase it by changing MAX_SKINS macro. Maximum supported is not defined, supposedly to be unlimited ).
 
 StatTrack System on every Weapon Skin.
 
