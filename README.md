@@ -71,31 +71,31 @@ Skin locking method. You can lock certain skins from being traded, gifted, duste
 
 	Administration Cmds
 	
-amx_givepoints <Name> <Amount> ( Give points to a certain target )
+amx_givepoints [Name] [Amount] ( Give points to a certain target )
 
-amx_givecases <Name> <Amount> ( Give cases to a certain target )
+amx_givecases [Name] [Amount] ( Give cases to a certain target )
 	
-amx_givekeys <Name> <Amount> ( Give keys to a certain target )
+amx_givekeys [Name] [Amount] ( Give keys to a certain target )
 	
-amx_givedusts <Name> <Amount> ( Give dusts to a certain target )
+amx_givedusts [Name] [Amount] ( Give dusts to a certain target )
 	
-amx_setskins <Name> <SkinID> <Amount> ( Set an amount of a SkinID to a certain target )
+amx_setskins [Name] [SkinID] [Amount] ( Set an amount of a SkinID to a certain target )
 	
-amx_give_all_skins <Name> ( Sets all skins to a certain target )
+amx_give_all_skins [Name] ( Sets all skins to a certain target )
 	
-amx_setrank <Name> <RangID> ( Sets a rang to a certain target )
+amx_setrank [Name] [RangID] ( Sets a rang to a certain target )
 	
-amx_finddata <Name> ( Search a player data in the binary data base )
+amx_finddata [Name] ( Search a player data in the binary data base )
 	
-amx_resetdata <Name> <Mode> ( Resets a player data. <Mode> 1 - Deleting the account from the binary data base ; <Mode> 0 - Reseting the account from the binary data base. )
+amx_resetdata [Name] [Mode] ( Resets a player data. [Mode] 0 - Reseting the account from the binary data base. ; [Mode] 1 - Deleting the account from the binary data base ; [Mode] 2 - Restting the account's specific data field ( Example: Rank, Kills, Cases, etc ) )
 	
-amx_change_pass <Name> <New Password> ( Reseting a player password )
+amx_change_pass [Name] [New Password] ( Reseting a player password )
 	
-csgor_getinfo <Type> <Index> ( Gets infos about a Rank or a Skin given by RankID / SKinID )
+csgor_getinfo [Type] [Index] ( Gets infos about a Rank or a Skin given by RankID / SKinID )
 	
-amx_nick_csgo <Name> <New Name> ( Changing a player name cuz it is blocked for other plugins )
+amx_nick_csgo [Name] [New Name] ( Changing a player name cuz it is blocked for other plugins )
 	
-amx_skin_index <Skin Name> ( Returning skin id in the array )
+amx_skin_index [Skin Name] ( Returning skin id in the array )
 	
 	Public Cmds
 	
