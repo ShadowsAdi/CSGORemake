@@ -37,6 +37,8 @@ Kills from each round will be counted on the screen using a sprite model.
 
 MVP at end of the round ( based on best killer or the bomb planter or bomb defuser ).
 
+Music Kits for MVPs ( Players can buy the desired Music Kit in the Menu ).
+
 CS:GO Like end round sounds.
 
 Warmup time ( customizable by cvar )
