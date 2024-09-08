@@ -21,8 +21,8 @@
 /* DO NOT MODIFY THIS LIME. */
 #pragma dynamic MAX_SKINS * 17
 
-#define PLUGIN "CS:GO Remake"
-#define VERSION "2.3.2"
+#define PLUGIN "[CS:GO Remake] Core"
+#define VERSION "2.3.3"
 #define AUTHOR "Shadows Adi"
 
 #define CSGO_TAG 						"[CS:GO Remake]"
@@ -1249,7 +1249,7 @@ RegisterForwards()
 	g_iForwards[ user_register ] = CreateMultiForward("csgor_user_register", ET_IGNORE, FP_CELL)
 	g_iForwards[ user_pass_fail ] = CreateMultiForward("csgor_user_password_failed", ET_IGNORE, FP_CELL, FP_CELL)
 	g_iForwards[ user_assist ] = CreateMultiForward("csgor_user_assist", ET_IGNORE, FP_CELL, FP_CELL, FP_CELL, FP_CELL)
-	g_iForwards[ user_mvp ] = CreateMultiForward("csgor_user_mvp", ET_IGNORE, FP_CELL, FP_CELL, FP_CELL)
+	g_iForwards[ user_mvp ] = CreateMultiForward("csgor_user_mvp", ET_CONTINUE, FP_CELL, FP_CELL, FP_CELL)
 	g_iForwards[ user_case_opening ] = CreateMultiForward("csgor_user_case_open", ET_IGNORE, FP_CELL)
 	g_iForwards[ user_craft ] = CreateMultiForward("csgor_user_craft", ET_IGNORE, FP_CELL)
 	g_iForwards[ user_level_up ] = CreateMultiForward("csgor_user_levelup", ET_IGNORE, FP_CELL, FP_STRING, FP_CELL)
@@ -1841,24 +1841,24 @@ public task_Check_Conditions(data[])
 		{
 			if (g_bBombExplode)
 			{
-				_ShowMVP(g_iBombPlanter, 1)
+				_ShowMVP(g_iBombPlanter, MVP_PLANTER)
 			}
 			else
 			{
 				new top1 = _GetTopKiller(1)
-				_ShowMVP(top1, 0)
+				_ShowMVP(top1, MVP_KILLER)
 			}
 		}
 		case 2:
 		{
 			if (g_bBombDefused)
 			{
-				_ShowMVP(g_iBombDefuser, 2)
+				_ShowMVP(g_iBombDefuser, MVP_DEFUSER)
 			}
 			else
 			{
 				new top1 = _GetTopKiller(2)
-				_ShowMVP(top1, 0)
+				_ShowMVP(top1, MVP_KILLER)
 			}
 		}
 	}
@@ -2721,8 +2721,12 @@ public QueryPlayerLoadedSkins(iFailState, Handle:iQuery, Error[], Errcode, szDat
 		}
 	}
 
-	client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DATA_LOADED")
-	g_bLoaded[id] = true
+	if(g_bLogged[id])
+	{
+		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_DATA_LOADED")
+		g_bLoaded[id] = true
+		_ShowMainMenu(id)
+	}
 }
 
 public _SaveData(id)
@@ -2983,26 +2987,25 @@ public reg_menu_handler(id, menu, item)
 
 			_LoadSkins(id)
 
-			new spLen = strlen(g_szUser_SavedPass[id])
+			new spLen = strlen(g_szUserPassword[id])
 
 			if (strlen(g_szUserPassword[id]) <= 0) 
 			{
-				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_REG_INSERT_PASS", 6)
+				client_print_color(id, print_chat, "^4%s^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_REG_INSERT_PASS", 6)
 				client_cmd(id, "messagemode UserPassword")
 			}
 
 			if (!equal(g_szUserPassword[id], g_szUser_SavedPass[id], spLen))
 			{
 				g_iUserPassFail[id]++
-				client_print_color(id, print_chat, "^4%s ^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_PASS_FAIL")
+				client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_PASS_FAIL")
 				_ShowRegMenu(id)
 				ExecuteForward(g_iForwards[ user_pass_fail ], g_iForwardResult, id, g_iUserPassFail[id])
 			}
 			else
 			{
 				g_bLogged[id] = true
-				_ShowMainMenu(id)
-				client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_LOGIN_SUCCESS")
+				client_print_color(id, print_chat, "^4%s ^1%L", CSGO_TAG, LANG_SERVER, "CSGOR_LOGIN_SUCCESS")
 				ExecuteForward(g_iForwards[ user_log_in ], g_iForwardResult, id)
 			}
 
@@ -10963,12 +10966,18 @@ _ShowMVP(id, event)
 
 	g_iUserMVP[id]++
 
+	new iRet
+	ExecuteForward(g_iForwards[ user_mvp ], iRet, id, event, g_iRoundKills[id])
+
+	if(iRet > PLUGIN_CONTINUE)
+	{
+		return PLUGIN_HANDLED
+	}
+
+	_GiveBonus(id, 1)
+	
 	switch (g_iCvars[iMVPMsgType])
 	{
-		case 0:
-		{
-			goto _End
-		}
 		case 1:
 		{
 			switch (event)
@@ -11026,11 +11035,7 @@ _ShowMVP(id, event)
 			}
 		}
 	}
-
-	_End:
-	ExecuteForward(g_iForwards[ user_mvp ], g_iForwardResult, id, event, g_iRoundKills[id])
-	_GiveBonus(id, 1)
-
+	
 	return PLUGIN_HANDLED
 }
 
@@ -11097,7 +11102,7 @@ _GiveBonus(id, type)
 	if (!g_bLogged[id])
 	{
 		client_print_color(id, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_REGISTER")
-		return PLUGIN_HANDLED
+		return -1
 	}
 
 	new rpoints
@@ -11120,7 +11125,7 @@ _GiveBonus(id, type)
 		_Save(id)
 	}
 
-	return PLUGIN_CONTINUE
+	return rpoints
 }
 
 _SetKillsIcon(id, reset)
