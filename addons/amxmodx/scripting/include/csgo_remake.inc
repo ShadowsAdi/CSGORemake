@@ -24,6 +24,13 @@ enum _:FileSections
     secSkipChat
 }
 
+enum _:MVPEvents
+{
+    MVP_KILLER = 0,
+    MVP_PLANTER,
+    MVP_DEFUSER
+}
+
 /**
  * Returns a player's points.
  *
@@ -429,7 +436,8 @@ forward csgor_user_assist(id, killer, victim, head);
  * @param event             Event type. (0 - Top Killer, 1 - Planter, 2 - Defuser)
  * @param kills             Player's kills.
  * 
- * @noreturn
+ * @return                  PLUGIN_HANDLED to prevent showing integrated MVP announcer,
+ *                          PLUGIN_CONTINUE to do nothing
  */
 forward csgor_user_mvp(id, event, kills);
 
