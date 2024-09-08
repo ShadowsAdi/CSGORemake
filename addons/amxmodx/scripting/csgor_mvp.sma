@@ -716,7 +716,7 @@ public Logev_Roundstart()
 	g_bIsBombPlanted = false
 }
 
-public csgor_user_mvp(id, event, kills, bonus)
+public csgor_user_mvp(id, event, kills)
 {
 	return PLUGIN_HANDLED
 }
