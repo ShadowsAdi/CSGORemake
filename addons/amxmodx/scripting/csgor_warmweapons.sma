@@ -18,25 +18,29 @@ enum (+=33)
 
 enum 
 {
-	TERRORIST_TEAM = 1,
-	CT_TEAM
+	TERRORIST_TEAM = 0,
+	CT_TEAM,
+	MAX_TEAMS
 }
 
 enum _:WarmWeapons
 {
 	szPrimary[32],
 	szSecondary[32],
-	iAmmo,
-	Teams
+	iAmmo
 }
 
-new const g_szWarmWeapons[WarmWeapons] =
+new const g_szWarmWeapons[MAX_TEAMS][WarmWeapons] =
 {
-	// Here you can change the weapons.
+	// Here you can change the weapons. First section is for Terrorists equipment, second for CT
 	//Example: 
-	// {"here needs to be the primary weapon", "here the secondary ( pistol )", ammo, Player_Team}
-	{"weapon_ak47", "weapon_deagle", 999, TERRORIST_TEAM},
-	{"weapon_m4a1", "weapon_deagle", 999, CT_TEAM}
+	// {"here needs to be the primary weapon"}, {"here the secondary ( pistol )"}, { ammo }}
+	{
+		{"weapon_ak47"}, {"weapon_deagle"}, { 999 },
+	},
+	{
+		{ "weapon_m4a1" }, {"weapon_deagle"}, { 999 }
+	}
 }
 
 public plugin_init()
@@ -76,31 +80,22 @@ public task_give_weapon(id)
 	if(is_user_alive(id) && csgor_is_warmup())
 	{
 		new TeamName:m_Team = get_member(id, m_iTeam)
-		static WeaponIdType:iWeaponID[3], bool:bChecked
-
-		if(!bChecked)
-		{
-			iWeaponID[0] = rg_get_weapon_info(g_szWarmWeapons[szPrimary][TERRORIST_TEAM], WI_ID)
-			iWeaponID[1] = rg_get_weapon_info(g_szWarmWeapons[szPrimary][CT_TEAM], WI_ID)
-			iWeaponID[2] = rg_get_weapon_info(g_szWarmWeapons[szSecondary], WI_ID)
-			bChecked = true
-		}
 
 		switch(m_Team)
 		{
 			case TEAM_TERRORIST:
 			{
-				rg_give_item(id, g_szWarmWeapons[szPrimary][TERRORIST_TEAM], GT_REPLACE)
-				rg_give_item(id, g_szWarmWeapons[szSecondary][TERRORIST_TEAM], GT_REPLACE)
-				rg_set_user_bpammo(id, iWeaponID[0], 999)
-				rg_set_user_bpammo(id, iWeaponID[2], 999)
+				rg_give_item(id, g_szWarmWeapons[TERRORIST_TEAM][szPrimary], GT_REPLACE)
+				rg_give_item(id, g_szWarmWeapons[TERRORIST_TEAM][szSecondary], GT_REPLACE)
+				rg_set_user_bpammo(id, rg_get_weapon_info(g_szWarmWeapons[TERRORIST_TEAM][szPrimary], WI_ID), 999)
+				rg_set_user_bpammo(id, rg_get_weapon_info(g_szWarmWeapons[TERRORIST_TEAM][szSecondary], WI_ID), 999)
 			}
 			case TEAM_CT:
 			{
-				rg_give_item(id, g_szWarmWeapons[szPrimary][CT_TEAM], GT_REPLACE)
-				rg_give_item(id, g_szWarmWeapons[szSecondary][CT_TEAM], GT_REPLACE)
-				rg_set_user_bpammo(id, iWeaponID[1], 999)
-				rg_set_user_bpammo(id, iWeaponID[2], 999)
+				rg_give_item(id, g_szWarmWeapons[CT_TEAM][szPrimary], GT_REPLACE)
+				rg_give_item(id, g_szWarmWeapons[CT_TEAM][szSecondary], GT_REPLACE)
+				rg_set_user_bpammo(id,  rg_get_weapon_info(g_szWarmWeapons[CT_TEAM][szPrimary], WI_ID), 999)
+				rg_set_user_bpammo(id, rg_get_weapon_info(g_szWarmWeapons[CT_TEAM][szSecondary], WI_ID), 999)
 			}
 		}
 	}
