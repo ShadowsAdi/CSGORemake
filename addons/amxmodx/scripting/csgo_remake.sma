@@ -913,8 +913,6 @@ public plugin_init()
 		register_clcmd("chooseteam", "clcmd_chooseteam")
 	}
 
-	g_tDataTrie = TrieCreate()
-
 	set_task(2.0, "DatabaseConnect")
 }
 
@@ -1016,7 +1014,7 @@ public plugin_precache()
 	log_to_file("csgor_debug_logs.log", "plugin_precache()")
 	#endif
 
-	register_forward(FM_PrecacheEvent, "fw_PrecacheEvent_Post", 1)
+	RegisterHookChain(RH_SV_AddResource, "RH_SV_AddResource_Post", 1)
 
 	RegisterForwards()
 
@@ -1224,16 +1222,19 @@ public precache_mess(iEnd)
 	ExecuteForward(g_iForwards[file_executed], g_iForwardResult, iEnd)
 }
 
-public fw_PrecacheEvent_Post(iType, const szEvent[])
+public RH_SV_AddResource_Post(ResourceType_t:type, const filename[], size, flags, index)
 {
-	new iTemp
-
-	for(new i; i < sizeof(g_szGEvents); i++)
+	switch(type)
 	{
-		if (equali(szEvent, g_szGEvents[i]))
+		case t_eventscript:
 		{
-			iTemp = get_orig_retval()
-			g_bGEventID[iTemp] = true
+			for(new i; i < sizeof(g_szGEvents); i++)
+			{
+				if (equali(filename, g_szGEvents[i]))
+				{
+					g_bGEventID[index] = true
+				}
+			}
 		}
 	}
 }
@@ -1313,6 +1314,8 @@ public plugin_natives()
 	g_aSkinsMenu = ArrayCreate(EnumSkinsMenuInfo)
 	g_aDynamicMenu = ArrayCreate(EnumDynamicMenu)
 	g_aSkipChat = ArrayCreate(20)
+
+	g_tDataTrie = TrieCreate()
 
 	register_library("csgo_remake")
 
@@ -4150,7 +4153,7 @@ public Ham_GrenadeSecondaryAttack_Pre(ent)
 	log_to_file("csgor_debug_logs.log", "Ham_GrenadeSecondaryAttack_Pre()")
 	#endif
 
-	if (is_nullent(ent))
+	if (is_nullent(ent) || !IsGrenadeClassName(ent))
 		return
 
 	new id = GetEntityOwner(ent)
@@ -4204,7 +4207,7 @@ public grenade_throw(id, ent, csw)
 	ClearPlayerBit(g_bitShortThrow, id)
 }
 
-public RG_CBasePlayerWeapon_DefaultDeploy_Post(ent)
+public RG_CBasePlayerWeapon_DefaultDeploy_Post(ent, szViewModel[], szWeaponModel[], iAnim, szAnimExt[], skiplocal)
 {
 	#if defined DEBUG
 	log_to_file("csgor_debug_logs.log", "RG_CBasePlayerWeapon_DefaultDeploy_Post()")
@@ -4216,6 +4219,9 @@ public RG_CBasePlayerWeapon_DefaultDeploy_Post(ent)
 	new iPlayer = GetEntityOwner(ent)
 	
 	new weapon = GetWeaponEntity(ent)
+
+	if(!(CSW_P228 <= weapon <= CSW_P90))
+		return
 	
 	g_iWeaponIndex[iPlayer] = weapon
 	
@@ -11966,7 +11972,21 @@ GetWeaponEntity(iEnt)
 	log_to_file("csgor_debug_logs.log", "GetWeaponEntity()")
 	#endif
 
-	return get_member(iEnt, m_iId)
+	return rg_get_iteminfo(iEnt, ItemInfo_iId)
+}
+
+bool:IsGrenadeClassName(iEnt)
+{
+	new bool:bFound = false
+	for(new i; i < sizeof(GrenadeName); i++)
+	{
+		if(FClassnameIs(iEnt, GrenadeName[i]))
+		{
+			bFound = true
+			break
+		}
+	}
+	return bFound
 }
 
 PlayWeaponState(iPlayer, const szShootSound[], iWeaponAnim)
