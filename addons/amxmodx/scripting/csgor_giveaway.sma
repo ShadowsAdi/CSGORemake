@@ -182,7 +182,7 @@ public ev_NewRound()
 			if(index != -1)
 			{
 				client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_GIVEAWAY_WON_BY", index, g_eSkin[szSkin])
-				g_eCvars[iType] ? csgor_set_user_statt_skins(index, g_eSkin[iSkin], 1) : csgor_set_user_skins(index, g_eSkin[iSkin], 1)
+				g_eCvars[iType] ? csgor_set_user_statt_skins(index, g_eSkin[iSkin], csgor_get_user_statt_skins(id, g_eSkin[iSkin]) + 1) : csgor_set_user_skins(index, g_eSkin[iSkin], csgor_get_user_skins(id, g_eSkin[iSkin]))
 				g_bOpened = false
 			}
 		}
