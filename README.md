@@ -8,10 +8,10 @@ Running only on AmxModX 1.8.3 / 1.9.0 / 1.10.0
 [Click HERE](https://github.com/ShadowsAdi/CSGORemake/releases/latest)
 
 ## Requirements
-This mod were tested on Linux Distribution and Windows with ReHLDS Engine, ReGameDLL and ReAPI:
-- AmxModX 1.8.3-5201
-- AmxModX 1.9.0-5271
-- AmxModX 1.10.0-5406
+- AmxModX 1.9.0-5271+
+- ReHLDS  v3.13.0.788+
+- ReGameDLL v5.26.0.668+
+- ReAPI v5.24.0.300+
 
 ## Install
 Download latest release from [here](https://github.com/ShadowsAdi/CSGORemake/archive/master.zip).
