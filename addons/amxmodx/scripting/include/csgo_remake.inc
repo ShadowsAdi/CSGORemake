@@ -13,6 +13,20 @@
 
 #define MAX_RANK_NAME 48
 
+#define IsPlayer(%0,%1)                    (1 <= %0 <= %1)
+
+#define GetPlayerBit(%0,%1,%2)             ( IsPlayer(%1,%2) && ( %0 & ( 1 << ( %1 & 31 ) ) ) )
+#define SetPlayerBit(%0,%1,%2)             ( IsPlayer(%1,%2) && ( %0 |= ( 1 << ( %1 & 31 ) ) ) )
+#define ClearPlayerBit(%0,%1)              %0 &= ~( 1 << ( %1 & 31 ) ) 
+
+#define VERSION "3.0.0"
+
+enum
+{
+    KEY = -6,
+    CASE = -5
+}
+
 enum _:FileSections
 {
     secRanks = 1,
@@ -21,7 +35,9 @@ enum _:FileSections
     secPromocodes,
     secSortedMenu,
     secDynamicMenu,
-    secSkipChat
+    secSkipChat,
+    secWeaponSounds,
+    secPlayerSounds
 }
 
 enum _:MVPEvents
@@ -29,6 +45,33 @@ enum _:MVPEvents
     MVP_KILLER = 0,
     MVP_PLANTER,
     MVP_DEFUSER
+}
+
+enum _:SkinData
+{
+    iWeaponID,
+    szViewModel[MAX_SKIN_NAME],
+    szWeaponModel[MAX_SKIN_NAME],
+    bool:bHasWeaponModel,
+    iSubModelID,
+    szSkinName[MAX_SKIN_NAME],
+    iSkinType,
+    iSkinChance,
+    iSkinCostMin,
+    iSkinCostMax,
+    iSkinDust,
+    iSkinLock
+}
+
+enum _:PlayerSkins 
+{
+    iWeaponid,
+    iSkinid,
+    iPieces,
+    iSelected,
+    iKills,
+    isStattrack,
+    szNameTag[32]
 }
 
 /**
@@ -164,15 +207,14 @@ native csgor_set_user_skins(id, skinid, amount);
 native csgor_get_skins_num();
 
 /**
- * Get skin name with given skinID.
+ * Get skin data for given skinID.
  *
  * @param skinid    Skin index.
- * @param output    Output buffer for skin name.
- * @param lem       Max length of a output buffer.
+ * @param output    Output SkinData Array buffer.
  *
  * @return      1 on success, -1 otherwise.
  */
-native csgor_get_skin_name(skinid, output[], len);
+native csgor_get_skin_data(skinid, output[]);
 
 /**
  * Returns whether a player is logged.
@@ -243,7 +285,7 @@ native csgor_ranks_num();
  * 
  * @param skinName[]        Skin name to search for index in array.
  *
- * @return 				Skin index in array.
+ * @return              Skin index in array.
  *
  */
 native csgor_get_skin_index(skinName[]);
@@ -381,6 +423,131 @@ native csgor_get_database_data(szHostname[], iHostLen, szUsername[], iUserLen, s
 native csgor_get_rank_name(iRankNum, szBuffer[])
 
 /**
+ * Returns player's weapon body index. 
+ * 
+ * @param iPlayer       Player index.
+ * @param iWID          Weapon index.
+ *
+ * @return              Player's weapon body index
+ *
+ */
+native csgor_get_user_body(iPlayer, iWID)
+
+/**
+ * Calls internal SendWeaponAnim function. 
+ * 
+ * @param iPlayer       Player index.
+ * @param iAnim         Weapon animation to play.
+ *
+ * @return              0 on error, 1 on success.
+ *
+ */
+native csgor_send_weapon_anim(iPlayer, iAnim)
+
+/**
+ * Retrieves current player name stored in Core plugin. 
+ * 
+ * @param id            Player index.
+ * @param szName        Buffer to copy player's name.
+ * @param iLen          Buffer length.
+ * 
+ * @return              -1 on error, 1 on success.
+ *
+ */
+native csgor_get_user_name(id, szName[], iLen)
+
+/**
+ * Calls Save function for player's data. 
+ * 
+ * @param id            Player index.
+ *
+ * @return              -1 on error, 1 on success.
+ *
+ */
+native csgor_save_user_data(id)
+
+/**
+ * Returns if the player has certain item in inventory. 
+ * 
+ * @param id            Player index.
+ * @param item          Item index.
+ * @param iStattrack    Check if the searched skin should be Stattrack or not.
+ *
+ * @note iStattrack parameter should be treated as a boolean value ( 1 or 0 )
+
+ * @return              1 if the item exists, 0 otherwise.
+ *
+ */
+native csgor_user_has_item(id, item, iStattrack)
+
+/**
+ * Retrieves the database handles. 
+ * 
+ * @param iSqlConnection  Handle to store connection in.
+ * @param hSqlTuple       Handle to store tuple in.
+ *
+ * @noreturn
+ *
+ */
+native csgor_get_database_connection(&Handle:iSqlConnection, &Handle:hSqlTuple)
+
+/**
+ * Sends a chat message through internal chat format. 
+ * 
+ * @param id            Receiver index or 0 for all players.
+ * @param text          Formatting rules.
+ * @param ...           Variable number of formatting parameters.
+ *
+ * @return              Number of printed characters
+ *
+ */
+native csgor_send_message(id, text[], any:...)
+
+/**
+ * Retrieves data of player's skinid. 
+ * 
+ * @param id            Receiver index or 0 for all players.
+ * @param skinid        Skin Index.
+ * @param stattrack     If the skin looking for should be stattrack
+ * @param ePlayerSkins  Array to copy player's skin data.
+ *
+ * @return             -1 if not found, index of entry otherwise
+ *
+ */
+native csgor_get_user_skin_data(id, skinid, stattrack, ePlayerSkins[PlayerSkins])
+
+/**
+ * Returns number of skins for a WeaponID in Player's array.
+ *
+ * @param id        Player index.
+ * @param wid       Weapon Index.
+ * @param stattrack If the skins looking for should be stattrack
+ * 
+ * @return          Number of total skins for a WeaponID in Player's array.
+ */
+native csgor_get_user_skinsnum(id, wid, stattrack = 0)
+
+/**
+ * Returns the number of Weapons in dynamic menu.
+ *
+ * @noparam
+ * 
+ * @return          Number of Weapons in dynamic menu.
+ */
+native csgor_get_dyn_menu_num()
+
+/**
+ * Returns the information of Weapons dynamic menu.
+ *
+ * @param iMenuID   Menu index in array.
+ * @param szItem    Variable to store the weapon's menu name
+ * @param szItemID  Variable to store the weapon's WeaponID
+ * 
+ * @return          Number of Weapons in dynamic menu.
+ */
+native csgor_get_dyn_menu_item(iMenuID, szItem[], szItemID[])
+
+/**
  * Called when a player log in account.
  *
  * @param id            Player index.
@@ -410,8 +577,8 @@ forward csgor_user_register(id);
 /**
  * Called when a player is entering a wrong password.
  *
- * @param id           	Player index.
- * @param fails        	How many times player entered the wrong password.
+ * @param id            Player index.
+ * @param fails         How many times player entered the wrong password.
  * 
  * @noreturn
  */
@@ -434,7 +601,7 @@ forward csgor_user_assist(id, killer, victim, head);
  *
  * @param id                MVP index.
  * @param event             Event type. (0 - Top Killer, 1 - Planter, 2 - Defuser)
- * @param kills             Player's kills.
+ * @param kills             MVP's kills.
  * 
  * @return                  PLUGIN_HANDLED to prevent showing integrated MVP announcer,
  *                          PLUGIN_CONTINUE to do nothing
@@ -497,3 +664,28 @@ forward csgor_on_user_drop(id)
  * @noreturn
  */
 forward csgor_read_configuration_data(szBuffer[], FileSections:iSection, iLine)
+
+/** Called when a weapon has been deployed in player's viewmodel
+ * 
+ * @param iPlayer           Player index.
+ * @param entWeapon         Weapon entity index.
+ * 
+ * @noreturn
+ */
+forward csgor_weapon_deploy(iPlayer, entWeapon)
+
+/** Called when connection to database has been established
+ * 
+ * @noparam
+ * 
+ * @noreturn
+ */
+forward csgor_database_loaded()
+
+/** Called when player's account has been fully loaded.
+ * 
+ * @param iPlayer           Player index.
+ * 
+ * @noreturn
+ */
+forward csgor_account_loaded(id)

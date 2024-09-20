@@ -6,7 +6,6 @@
 #define CSGO_TAG "[CS:GO Remake]"
 
 #define PLUGIN  "[CS:GO Remake] Skin GiveAway"
-#define VERSION "1.1"
 #define AUTHOR  "Shadows Adi"
 
 enum _:SkinInfo
@@ -61,7 +60,12 @@ public csgor_on_configs_executed(iSuccess)
 	if(iSuccess)
 	{
 		g_eSkin[iSkin] = random(csgor_get_skins_num())
-		csgor_get_skin_name(g_eSkin[iSkin], g_eSkin[szSkin], charsmax(g_eSkin[szSkin]))
+
+		new eSkinData[SkinData]
+		csgor_get_skin_data(g_eSkin[iSkin], eSkinData)
+
+		copy(g_eSkin[szSkin], charsmax(g_eSkin[szSkin]), eSkinData[szSkinName])
+
 		if(g_eCvars[iType])
 		{
 			format(g_eSkin[szSkin], charsmax(g_eSkin[szSkin]), "StatTrack %s", g_eSkin[szSkin])
@@ -182,7 +186,31 @@ public ev_NewRound()
 			if(index != -1)
 			{
 				client_print_color(0, print_chat, "^4%s^1 %L", CSGO_TAG, LANG_SERVER, "CSGOR_GIVEAWAY_WON_BY", index, g_eSkin[szSkin])
-				g_eCvars[iType] ? csgor_set_user_statt_skins(index, g_eSkin[iSkin], 1) : csgor_set_user_skins(index, g_eSkin[iSkin], 1)
+				switch(g_eCvars[iType])
+				{
+					case 0:
+					{
+						if(csgor_user_has_item(index, g_eSkin[iSkin], 0))
+						{
+							csgor_set_user_skins(index, g_eSkin[iSkin], csgor_get_user_skins(index, g_eSkin[iSkin]) + 1)
+						}
+						else 
+						{
+							csgor_set_user_skins(index, g_eSkin[iSkin], 1)
+						}
+					}
+					case 1:
+					{
+						if(csgor_user_has_item(index, g_eSkin[iSkin], 1))
+						{
+							csgor_set_user_statt_skins(index, g_eSkin[iSkin], csgor_get_user_statt_skins(index, g_eSkin[iSkin]) + 1)
+						}
+						else 
+						{
+							csgor_set_user_statt_skins(index, g_eSkin[iSkin], 1)
+						}
+					}
+				}
 				g_bOpened = false
 			}
 		}

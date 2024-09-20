@@ -4,7 +4,6 @@
 #include <csgo_remake>
 
 #define PLUGIN  "[CS:GO Remake] Registration Bonus"
-#define VERSION "1.1"
 #define AUTHOR  "Shadows Adi"
 
 new g_iCasesNum

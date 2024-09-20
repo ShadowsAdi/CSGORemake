@@ -5,10 +5,7 @@
 #include <reapi>
 
 #define PLUGIN  "[CS:GO Remake] WarmUp Weapons"
-#define VERSION "1.1"
 #define AUTHOR  "Shadows Adi"
-
-#define IsPlayer(%1) (1 <= %1 <= MAX_PLAYERS)
 
 enum (+=33)
 {
@@ -36,7 +33,7 @@ new const g_szWarmWeapons[MAX_TEAMS][WarmWeapons] =
 	//Example: 
 	// {"here needs to be the primary weapon"}, {"here the secondary ( pistol )"}, { ammo }}
 	{
-		{"weapon_ak47"}, {"weapon_deagle"}, { 999 },
+		{"weapon_ak47"}, {"weapon_deagle"}, { 999 }
 	},
 	{
 		{ "weapon_m4a1" }, {"weapon_deagle"}, { 999 }
