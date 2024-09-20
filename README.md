@@ -1,4 +1,4 @@
-# CSGO Remake V 2.3.3
+# CSGO Remake V 3.0.0
 <img align="center" src="https://i.imgur.com/ByWZCEh.jpg" alt="CS:GO Remake"/>
 
 Mod inspired by the popular Counter Strike: Global Offensive.
@@ -23,7 +23,7 @@ All cvars can be found in ...amxmodx/configs/plugins/csgor/csgo_remake.cfg. This
 ## Features
 MySQL data saving.
 
-Maxmimum skin amount is 450 ( You can increase it by changing MAX_SKINS macro. Maximum supported is not defined, supposedly to be unlimited ).
+There is no skin amount limit starting with version 3.0.
 
 StatTrack System on every Weapon Skin.
 
