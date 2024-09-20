@@ -7,24 +7,14 @@
 #include <csgo_remake>
 
 #define PLUGIN  "[CS:GO Remake] Save player's skins"
-#define VERSION "1.0"
 #define AUTHOR  "Shadows Adi"
 
 #if !defined MAX_NAME_LENGTH
 #define MAX_NAME_LENGTH 32
 #endif
 
-#pragma dynamic 10000
+#pragma dynamic 7000
 
-enum _:SqlConnection
-{
-	szSqlHost[32],
-	szSqlUsername[32],
-	szSqlPassword[32],
-	szSqlDatabase[32]
-}
-
-new g_eSqlConnection[SqlConnection]
 new Handle:g_hTuple
 new Handle:g_hSqlConnection
 new g_szError[256]
@@ -37,68 +27,52 @@ public plugin_init()
 	register_cvar("csgor_save_skins", AUTHOR, FCVAR_SERVER|FCVAR_EXTDLL|FCVAR_UNLOGGED|FCVAR_SPONLY)
 }
 
-public csgor_on_configs_executed(iSuccess)
+public csgor_database_loaded()
 {
-	if(iSuccess)
-	{
-		csgor_get_database_data(g_eSqlConnection[szSqlHost], charsmax(g_eSqlConnection[szSqlHost]), g_eSqlConnection[szSqlUsername], \
-		 charsmax(g_eSqlConnection[szSqlUsername]), g_eSqlConnection[szSqlPassword], charsmax(g_eSqlConnection[szSqlPassword]), \
-		 g_eSqlConnection[szSqlDatabase], charsmax(g_eSqlConnection[szSqlDatabase]))
-
-		g_hTuple = SQL_MakeDbTuple(g_eSqlConnection[szSqlHost], g_eSqlConnection[szSqlUsername], g_eSqlConnection[szSqlPassword], g_eSqlConnection[szSqlDatabase])
-	
-		new iError
-		g_hSqlConnection = SQL_Connect(g_hTuple, iError, g_szError, charsmax(g_szError))
-
-		if(g_hSqlConnection == Empty_Handle)
-		{
-			log_to_file("csgo_remake_errors.log", "[%s] Failed to connect to database. Make sure databse settings are right!", PLUGIN)
-			SQL_FreeHandle(g_hSqlConnection)
-			return
-		}
-
-		formatex(g_szQueryData, charsmax(g_szQueryData), "CREATE TABLE IF NOT EXISTS `csgor_players_skins` \
-			(`ID` INT NOT NULL AUTO_INCREMENT,\
-			`Name` VARCHAR(%d) NOT NULL,\
-			`P90` VARCHAR(%d) NOT NULL, `KNIFE` VARCHAR(%d) NOT NULL, `AK47` VARCHAR(%d) NOT NULL,\
-			`SG552` VARCHAR(%d) NOT NULL, `DEAGLE` VARCHAR(%d) NOT NULL, `G3SG1` VARCHAR(%d) NOT NULL, `TMP` VARCHAR(%d) NOT NULL,\
-			`M4A1` VARCHAR(%d) NOT NULL, `M3` VARCHAR(%d) NOT NULL, `M249` VARCHAR(%d) NOT NULL, `MP5NAVY` VARCHAR(%d) NOT NULL,\
-			`AWP` VARCHAR(%d) NOT NULL, `GLOCK18` VARCHAR(%d) NOT NULL, `USP` VARCHAR(%d) NOT NULL, `FAMAS` VARCHAR(%d) NOT NULL, `GALIL` VARCHAR(%d) NOT NULL,\
-			`SG550` VARCHAR(%d) NOT NULL, `UMP45` VARCHAR(%d) NOT NULL, `FIVESEVEN` VARCHAR(%d) NOT NULL, `ELITE` VARCHAR(%d) NOT NULL,\
-			`AUG` VARCHAR(%d) NOT NULL, `MAC10` VARCHAR(%d) NOT NULL, `XM1014` VARCHAR(%d) NOT NULL, `SCOUT` VARCHAR(%d) NOT NULL,\
-			`P228` VARCHAR(%d) NOT NULL,\
-			PRIMARY KEY(ID, Name));", MAX_NAME_LENGTH, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, \
-			MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, \
-			MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, \
-			MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, \
-			MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5, MAX_SKIN_NAME + 5)
-
-		new Handle:iQueries = SQL_PrepareQuery(g_hSqlConnection, g_szQueryData)
-	
-		if(!SQL_Execute(iQueries))
-		{
-			SQL_QueryError(iQueries, g_szError, charsmax(g_szError))
-			log_to_file("csgo_remake_errors.log", "[%s] %s", PLUGIN, g_szError)
-		}
-
-		SQL_FreeHandle(iQueries)
-	}
+	DatabaseConnection()
 }
 
-public csgor_user_logging_in(id)
+DatabaseConnection()
+{
+	csgor_get_database_connection(g_hSqlConnection, g_hTuple)
+
+	if(g_hSqlConnection == Empty_Handle)
+	{
+		log_to_file("csgo_remake_errors.log", "[%s] Failed to connect to database. Make sure databse settings are right!", PLUGIN)
+		SQL_FreeHandle(g_hSqlConnection)
+		return
+	}
+	new iLen = MAX_SKIN_NAME + 5
+	formatex(g_szQueryData, charsmax(g_szQueryData), "CREATE TABLE IF NOT EXISTS `csgor_players_skins` \
+		(`ID` INT NOT NULL AUTO_INCREMENT,\
+		`Name` VARCHAR(%d) NOT NULL,\
+		`P90` VARCHAR(%d) NOT NULL, `KNIFE` VARCHAR(%d) NOT NULL, `AK47` VARCHAR(%d) NOT NULL,\
+		`SG552` VARCHAR(%d) NOT NULL, `DEAGLE` VARCHAR(%d) NOT NULL, `G3SG1` VARCHAR(%d) NOT NULL, `TMP` VARCHAR(%d) NOT NULL,\
+		`M4A1` VARCHAR(%d) NOT NULL, `M3` VARCHAR(%d) NOT NULL, `M249` VARCHAR(%d) NOT NULL, `MP5NAVY` VARCHAR(%d) NOT NULL,\
+		`AWP` VARCHAR(%d) NOT NULL, `GLOCK18` VARCHAR(%d) NOT NULL, `USP` VARCHAR(%d) NOT NULL, `FAMAS` VARCHAR(%d) NOT NULL, `GALIL` VARCHAR(%d) NOT NULL,\
+		`SG550` VARCHAR(%d) NOT NULL, `UMP45` VARCHAR(%d) NOT NULL, `FIVESEVEN` VARCHAR(%d) NOT NULL, `ELITE` VARCHAR(%d) NOT NULL,\
+		`AUG` VARCHAR(%d) NOT NULL, `MAC10` VARCHAR(%d) NOT NULL, `XM1014` VARCHAR(%d) NOT NULL, `SCOUT` VARCHAR(%d) NOT NULL,\
+		`P228` VARCHAR(%d) NOT NULL,\
+		PRIMARY KEY(ID, Name));", MAX_NAME_LENGTH, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen,
+		iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen, iLen)
+
+	SQL_ThreadQuery(g_hTuple, "QueryHandler", g_szQueryData)
+}
+
+public csgor_account_loaded(id)
 {
 	new szName[MAX_NAME_LENGTH]
 
 	get_user_name(id, szName, charsmax(szName))
 
-	new szSkinName[CSW_P90 + 1][2][MAX_SKIN_NAME]
+	new szSkin[CSW_P90 + 1][2][MAX_SKIN_NAME]
 
 	for(new i = 1; i < CSW_P90 + 1; i++)
 	{
 		if(i == CSW_HEGRENADE || i == CSW_SMOKEGRENADE || i == CSW_FLASHBANG || i == CSW_GLOCK /* Unused by game. */ || i == CSW_C4) continue
 
-		csgor_get_user_skin(id, i, szSkinName[i][0], charsmax(szSkinName[][]))
-		csgor_get_user_stattrack(id, i, szSkinName[i][1], charsmax(szSkinName[][]))
+		csgor_get_user_skin(id, i, szSkin[i][0], charsmax(szSkin[][]))
+		csgor_get_user_stattrack(id, i, szSkin[i][1], charsmax(szSkin[][]))
 	}
 
 	new Handle:iQuery = SQL_PrepareQuery(g_hSqlConnection, "SELECT * FROM `csgor_players_skins` WHERE `Name` = '%s';", szName)
@@ -129,15 +103,15 @@ public csgor_user_logging_in(id)
 		/* Looping backwards because in szSkinName array player's skin name is bacwards and we need to match them with it's column*/
 		for(new i = CSW_P90; i > CSW_NONE; i--)
 		{
-			if(szSkinName[i][0][0] == EOS)
+			if(szSkin[i][0][0] == EOS)
 				continue
 
-			if(containi(szSkinName[i][0], "NONE") != -1)
+			if(containi(szSkin[i][0], "NONE") != -1)
 			{
 				bNone = true
 			}
 
-			formatex(szVaules, charsmax(szVaules), "%s", bNone ? szSkinName[i][1] : szSkinName[i][0])
+			formatex(szVaules, charsmax(szVaules), "%s", bNone ? szSkin[i][1] : szSkin[i][0])
 
 			/* Replacing "TEMP" fields with player's active skins formatted in szValues[]. */
 			replace(szWeaponFields, charsmax(szWeaponFields), "TEMP", szVaules)
@@ -158,28 +132,37 @@ public csgor_user_logging_in(id)
 
 		for(new i = 1; i < CSW_P90 + 1; i++)
 		{
-			if(szSkinName[i][0][0] == EOS)
+			if(szSkin[i][0][0] == EOS)
 				continue
 
-			if(containi(szSkinName[i][0], "NONE") != -1)
+			if(containi(szSkin[i][0], "NONE") != -1)
 			{
 				bNone = true
 			}
 
-			format(szVaules, charsmax(szVaules), "^"%s^"%s%s", bNone ? szSkinName[i][1] : szSkinName[i][0], i == 1 ? "" : ",", szVaules)
+			format(szVaules, charsmax(szVaules), "^"%s^"%s%s", bNone ? szSkin[i][1] : szSkin[i][0], i == 1 ? "" : ",", szVaules)
 
 			bNone = false
 		}
 
-		formatex(g_szQueryData, charsmax(g_szQueryData), "INSERT INTO `csgor_players_skins` (`Name`,%s) VALUES (^"%s^", %s);", szWeaponFields, szName, szVaules)
+		formatex(g_szQueryData, charsmax(g_szQueryData), "INSERT INTO `csgor_players_skins` (`Name`,%s) VALUES (^"%s^", %s);", 
+			szWeaponFields, szName, szVaules)
 	}
 
-	iQuery = SQL_PrepareQuery(g_hSqlConnection, g_szQueryData)
+	SQL_ThreadQuery(g_hTuple, "QueryHandler", g_szQueryData)
+}
 
-	if(!SQL_Execute(iQuery))
+public QueryHandler(iFailState, Handle:iQuery, Error[], Errcode, szData[], iSize, Float:flQueueTime)
+{
+	switch(iFailState)
 	{
-		SQL_QueryError(iQuery, g_szError, charsmax(g_szError))
-		log_to_file("csgo_remake_errors.log", "[%s] Query error %s", PLUGIN, g_szError)
-		return
+		case TQUERY_CONNECT_FAILED: 
+		{
+			log_amx("[SQL Error] Connection failed (%i): %s", Errcode, Error)
+		}
+		case TQUERY_QUERY_FAILED:
+		{
+			log_amx("[SQL Error] Query failed (%i): %s", Errcode, Error)
+		}
 	}
 }

@@ -7,9 +7,6 @@
 
 #define CC_COLORS_TYPE CC_COLORS_NAMED_SHORT
 
-#define BYTE(%0) (%0&0xFF)
-#define BITS(%0,%1) ((%0&(1<<%1))?1:0)
-
 #include <amxmodx>
 #include <amxmisc>
 #include <cromchat>
@@ -44,10 +41,7 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  					"[CS:GO Remake] Most Valuable Player"
-#define VERSION 					"3.0"
 #define AUTHOR  					"Shadows Adi"
-
-#define IsPlayer(%1)					(1 <= %1 <= g_iMaxPlayers)
 
 #define NATIVE_ERROR					-1
 
@@ -517,7 +511,7 @@ public RG_RestartRound_Post()
 
 public RG_Player_Damage_Post(iVictim, iInflictor, iAttacker, Float:fDamage)
 {
-	if(!IsPlayer(iVictim) || !IsPlayer(iAttacker) || iVictim == iAttacker)
+	if(!IsPlayer(iVictim, g_iMaxPlayers) || !IsPlayer(iAttacker, g_iMaxPlayers) || iVictim == iAttacker)
 		return HC_CONTINUE
 
 	new iHitzone = get_member(iAttacker , m_LastHitGroup)
@@ -533,7 +527,7 @@ public RG_Player_Damage_Post(iVictim, iInflictor, iAttacker, Float:fDamage)
 
 public RG_Player_Killed_Post(pVictim, pAttacker, iGibs)
 {
-	if(!IsPlayer(pVictim) || !IsPlayer(pAttacker) || pVictim == pAttacker)
+	if(!IsPlayer(pVictim, g_iMaxPlayers) || !IsPlayer(pAttacker, g_iMaxPlayers) || pVictim == pAttacker)
 		return HC_CONTINUE
 
 	g_iKills[pAttacker]++
@@ -734,7 +728,7 @@ public Task_Check_Scenario()
 		}
 		case TERO_MVP:
 		{
-			if(g_bIsBombPlanted && IsPlayer(g_eMVPlayer[iPlanter]))
+			if(g_bIsBombPlanted && IsPlayer(g_eMVPlayer[iPlanter], g_iMaxPlayers))
 			{
 				g_iPlayerMVP[g_eMVPlayer[iPlanter]] += 1
 
@@ -749,7 +743,7 @@ public Task_Check_Scenario()
 		}
 		case CT_MVP:
 		{
-			if(g_bIsBombDefused && IsPlayer(g_eMVPlayer[iDefuser]))
+			if(g_bIsBombDefused && IsPlayer(g_eMVPlayer[iDefuser], g_iMaxPlayers))
 			{
 				g_iPlayerMVP[g_eMVPlayer[iDefuser]] += 1
 
@@ -1537,7 +1531,7 @@ public native_get_user_mvp_kills(iPluginID, iParamNum)
 
 	new id = get_param(1)
 
-	if(!IsPlayer(id))
+	if(!IsPlayer(id, g_iMaxPlayers))
 	{
 		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
 		return NATIVE_ERROR
@@ -1556,7 +1550,7 @@ public native_get_user_mvp_topkiller(iPluginID, iParamNum)
 
 	new id = get_param(1)
 
-	if(!IsPlayer(id))
+	if(!IsPlayer(id, g_iMaxPlayers))
 	{
 		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
 		return NATIVE_ERROR
@@ -1575,7 +1569,7 @@ public native_get_user_mvp_damage(iPluginID, iParamNum)
 
 	new id = get_param(1)
 
-	if(!IsPlayer(id))
+	if(!IsPlayer(id, g_iMaxPlayers))
 	{
 		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
 		return NATIVE_ERROR
@@ -1594,7 +1588,7 @@ public native_get_user_mvp_hs_damage(iPluginID, iParamNum)
 
 	new id = get_param(1)
 
-	if(!IsPlayer(id))
+	if(!IsPlayer(id, g_iMaxPlayers))
 	{
 		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
 		return NATIVE_ERROR
@@ -1613,7 +1607,7 @@ public native_get_user_mvp(iPluginID, iParamNum)
 
 	new id = get_param(1)
 
-	if(!IsPlayer(id))
+	if(!IsPlayer(id, g_iMaxPlayers))
 	{
 		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
 		return NATIVE_ERROR
@@ -1632,7 +1626,7 @@ public native_get_user_mvp_track(iPluginID, iParamNum)
 
 	new id = get_param(1)
 
-	if(!IsPlayer(id))
+	if(!IsPlayer(id, g_iMaxPlayers))
 	{
 		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
 		return NATIVE_ERROR
