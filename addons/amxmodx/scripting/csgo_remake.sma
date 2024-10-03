@@ -5718,7 +5718,7 @@ ProcessChat(id, szMessage[128], bool:bAllChat)
 				continue
 		}
 
-		CC_SendMessage(iPlayer, szMessage)
+		_CC_WriteMessage(iPlayer, szMessage)
 	}
 }
 
