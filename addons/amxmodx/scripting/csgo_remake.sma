@@ -1236,7 +1236,7 @@ public CheckUserInfo(id)
 
 	_Load(id)
 
-	set_task(1.0, "TaskDelayLoadCheck", id + TASK_CHECK_AFTERLOAD, .flags = "b")
+	set_task(1.0, "TaskDelayLoadCheck", id + TASK_CHECK_AFTERLOAD)
 }
 
 public TaskDelayLoadCheck(iTaskID)
@@ -1250,8 +1250,6 @@ public TaskDelayLoadCheck(iTaskID)
 		CC_SendMessage(iPlayer, "^1%L", LANG_SERVER, "CSGOR_LOGIN_SUCCESS")
 		ExecuteForward(g_iForwards[ user_log_in ], g_iForwardResult, iPlayer)
 	}	
-
-	remove_task(iTaskID)
 }
 
 public task_Info(id)
