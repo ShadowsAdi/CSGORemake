@@ -42,7 +42,8 @@ enum (+=1404)
 	TASK_MAP_END,
 	TASK_FADE_BLACK,
 	TASK_OBS_IN_EYE,
-	TASK_PREVIEW
+	TASK_PREVIEW,
+	TASK_CHECK_AFTERLOAD
 }
 
 enum _:EnumChat
@@ -1228,7 +1229,29 @@ ResetData(id, bool:bWithoutPassword = false)
 
 public CheckUserInfo(id)
 {
+	if(!IsRegistered(id))
+		return
+
 	get_user_info(id, g_iCvars[szUserInfoField], g_szUserPassword[id], charsmax(g_szUserPassword[]))
+
+	_Load(id)
+
+	set_task(1.0, "TaskDelayLoadCheck", id + TASK_CHECK_AFTERLOAD, .flags = "b")
+}
+
+public TaskDelayLoadCheck(iTaskID)
+{
+	new iPlayer = iTaskID - TASK_CHECK_AFTERLOAD
+
+	if (equal(g_szUserPassword[iPlayer], g_szUser_SavedPass[iPlayer], strlen(g_szUser_SavedPass[iPlayer])))
+	{
+		g_bLogged[iPlayer] = true
+		_LoadSkins(iPlayer)
+		CC_SendMessage(iPlayer, "^1%L", LANG_SERVER, "CSGOR_LOGIN_SUCCESS")
+		ExecuteForward(g_iForwards[ user_log_in ], g_iForwardResult, iPlayer)
+	}	
+
+	remove_task(iTaskID)
 }
 
 public task_Info(id)
@@ -2321,10 +2344,6 @@ public reg_menu_handler(id, menu, item)
 		}
 		case 3:
 		{
-			_Load(id)
-
-			_LoadSkins(id)
-
 			new spLen = strlen(g_szUserPassword[id])
 
 			if (strlen(g_szUserPassword[id]) <= 0) 
