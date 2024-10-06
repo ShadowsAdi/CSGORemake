@@ -117,7 +117,7 @@ enum _:EnumCvars
 	iShowDropCraft,
 	szRankUpBonus[16],
 	iCmdAccess,
-	iOverrideMenu,
+	szOverrideMenuKey[32],
 	iWarmUpDuration,
 	iCompetitive,
 	iBestPoints,
@@ -475,8 +475,8 @@ public plugin_init()
 	pcvar = create_cvar("csgor_default_map", "de_dust2", FCVAR_NONE, "If cvar ^"amx_nextmap^" doesn't exist, this will be the next map, only if ^"csgor_competitive_mode^" is ^"1^"")
 	bind_pcvar_string(pcvar, g_iCvars[szNextMapDefault], charsmax(g_iCvars[szNextMapDefault]))
 	
-	pcvar = create_cvar("csgor_override_menu", "1", FCVAR_NONE, "(0|1)  Main menu will open with ^"M^" key", true, 0.0, true, 1.0 )
-	bind_pcvar_num(pcvar, g_iCvars[iOverrideMenu])
+	pcvar = create_cvar("csgor_override_menu_key", "chooseteam", FCVAR_NONE, "Key to override for the Main Menu ( chooseteam, nightvision, impulse commands, etc )")
+	bind_pcvar_string(pcvar, g_iCvars[szOverrideMenuKey], charsmax(g_iCvars[szOverrideMenuKey]))
 	
 	pcvar = create_cvar("csgor_show_hud", "2", FCVAR_NONE, "(0|1|2) HUD Info^n 0 - Deactivated || 1 - Classic HUD || 2 - Advanced HUD", true, 0.0, true, 2.0 )
 	bind_pcvar_num(pcvar, g_iCvars[iShowHUD])
@@ -725,9 +725,9 @@ public plugin_init()
 	register_concmd("amx_nick_csgo", "concmd_nick", Access, "<Name> <New Name>")
 	register_concmd("amx_skin_index", "concmd_skin_index", Access, "<Skin Name>")
 
-	if (g_iCvars[iOverrideMenu])
+	if (g_iCvars[szOverrideMenuKey][0])
 	{
-		register_clcmd("chooseteam", "clcmd_chooseteam")
+		register_clcmd(g_iCvars[szOverrideMenuKey], "clcmd_menu_override")
 	}
 }
 
@@ -2032,7 +2032,7 @@ public clcmd_say_reg(id)
 	return PLUGIN_HANDLED
 }
 
-public clcmd_chooseteam(id)
+public clcmd_menu_override(id)
 {
 	clcmd_say_menu(id)
 
