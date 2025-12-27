@@ -261,13 +261,14 @@ public QueryPromocodeUses(iFailState, Handle:iQuery, Error[], Errcode, szData[],
 
 InsertTable()
 {
-	new szQueryData[256]
+	new szQueryData[256], szSqlAffinity[10]
+	get_cvar_string("csgor_dbase_affinity", szSqlAffinity, charsmax(szSqlAffinity))
+	SQL_SetAffinity(szSqlAffinity)
 	formatex(szQueryData, charsmax(szQueryData), "CREATE TABLE IF NOT EXISTS `csgor_promocodes` \
-		(`ID` INT NOT NULL AUTO_INCREMENT,\
+		(`ID` INTEGER PRIMARY KEY %s,\
 		`Name` VARCHAR(32) NOT NULL,\
 		`Auth` VARCHAR(32) NOT NULL,\
-		`Promocode` TEXT NOT NULL,\
-		PRIMARY KEY(ID));")
+		`Promocode` TEXT NOT NULL);", szSqlAffinity[0] == 's' ? "": "AUTO_INCREMENT") 
 
 	new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
 
