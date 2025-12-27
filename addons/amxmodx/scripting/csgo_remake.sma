@@ -140,6 +140,7 @@ enum _:EnumCvars
 	iHMaxChance,
 	iKMinChance,
 	iKMaxChance,
+	szSqlAffinity[10],
 	szSqlHost[32],
 	szSqlUsername[32],
 	szSqlPassword[32],
@@ -457,6 +458,9 @@ public plugin_init()
 	
 	new pcvar = create_cvar("csgor_author", "Shadows Adi", FCVAR_SERVER|FCVAR_EXTDLL|FCVAR_UNLOGGED|FCVAR_SPONLY, "DO NOT MODIFY!" )
 
+	pcvar = create_cvar("csgor_dbase_affinity", "sqlite", FCVAR_SPONLY | FCVAR_PROTECTED, "Database Affinity^n^"mysql^" - Use MySQL Database || ^"sqlite^" - Use SQLite Database")
+	bind_pcvar_string(pcvar, g_iCvars[szSqlAffinity], charsmax(g_iCvars[szSqlAffinity]))
+
 	pcvar = create_cvar("csgor_dbase_host", "localhost", FCVAR_SPONLY | FCVAR_PROTECTED, "Database Host")
 	bind_pcvar_string(pcvar, g_iCvars[szSqlHost], charsmax(g_iCvars[szSqlHost]))
 
@@ -738,6 +742,7 @@ public plugin_cfg()
 
 public DatabaseConnect()
 {
+	SQL_SetAffinity(g_iCvars[szSqlAffinity])
 	g_hSqlTuple = SQL_MakeDbTuple(g_iCvars[szSqlHost], g_iCvars[szSqlUsername], g_iCvars[szSqlPassword], g_iCvars[szSqlDatabase])
 
 	new iError
@@ -755,7 +760,7 @@ public DatabaseConnect()
 
 	new szQueryData[600]
 	formatex(szQueryData, charsmax(szQueryData),"CREATE TABLE IF NOT EXISTS `csgor_data` \
-		(`ID` INT NOT NULL AUTO_INCREMENT,\
+		(`ID` INTEGER PRIMARY KEY %s,\
 		`Name` VARCHAR(32) NOT NULL,\
 		`SteamID` VARCHAR(32) NOT NULL,\
 		`Last IP` VARCHAR(19) NOT NULL,\
@@ -768,10 +773,19 @@ public DatabaseConnect()
 		`Cases` INT(12) NOT NULL,\
 		`Kills` INT(12) NOT NULL,\
 		`Rank` INT(2) NOT NULL,\
-		`Bonus Timestamp` INT NOT NULL,\
-		PRIMARY KEY(ID, Name));")
+		`Bonus Timestamp` INT NOT NULL);", g_iCvars[szSqlAffinity][0] == 's' ? "": "AUTO_INCREMENT")
 
 	new Handle:iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
+
+	if(!SQL_Execute(iQueries))
+	{
+		SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
+		log_amx(g_szSqlError)
+	}
+
+	formatex(szQueryData, charsmax(szQueryData), "CREATE UNIQUE INDEX IF NOT EXISTS idx_csgor_name ON csgor_data (Name);")
+
+	iQueries = SQL_PrepareQuery(g_iSqlConnection, szQueryData)
 
 	if(!SQL_Execute(iQueries))
 	{

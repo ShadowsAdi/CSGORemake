@@ -19,7 +19,7 @@
 #define SetPlayerBit(%0,%1,%2)             ( IsPlayer(%1,%2) && ( %0 |= ( 1 << ( %1 & 31 ) ) ) )
 #define ClearPlayerBit(%0,%1)              %0 &= ~( 1 << ( %1 & 31 ) ) 
 
-#define VERSION "3.0.2"
+#define VERSION "3.0.3"
 
 enum
 {

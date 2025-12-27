@@ -1090,6 +1090,11 @@ DetectSaveType()
 		}
 	}
 
+	new szAffinity[10]
+	get_cvar_string("csgor_dbase_affinity", szAffinity, charsmax(szAffinity))
+
+	SQL_SetAffinity(szAffinity)
+
 	g_hSqlTuple = SQL_MakeDbTuple(g_eDBConfig[MYSQL_HOST], g_eDBConfig[MYSQL_USER], g_eDBConfig[MYSQL_PASS], g_eDBConfig[MYSQL_DB])
 
 	new iError
